@@ -1,4 +1,4 @@
-module github.com/speakeasy-api/jsonpath
+module github.com/pb33f/jsonpath
 
 go 1.24
 
