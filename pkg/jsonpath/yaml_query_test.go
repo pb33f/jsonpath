@@ -1,73 +1,73 @@
 package jsonpath
 
 import (
-	"github.com/speakeasy-api/jsonpath/pkg/jsonpath/config"
-	"github.com/speakeasy-api/jsonpath/pkg/jsonpath/token"
-	"gopkg.in/yaml.v3"
-	"reflect"
-	"strings"
-	"testing"
+    "github.com/speakeasy-api/jsonpath/pkg/jsonpath/config"
+    "github.com/speakeasy-api/jsonpath/pkg/jsonpath/token"
+    "go.yaml.in/yaml/v4"
+    "reflect"
+    "strings"
+    "testing"
 )
 
 func TestQuery(t *testing.T) {
-	tests := []struct {
-		name     string
-		input    string
-		yaml     string
-		expected []string
-	}{
-		{
-			name:     "Root node",
-			input:    "$",
-			yaml:     "foo",
-			expected: []string{"foo"},
-		},
-		{
-			name:  "Single child",
-			input: "$.store",
-			yaml: `
+    tests := []struct {
+        name     string
+        input    string
+        yaml     string
+        expected []string
+    }{
+        {
+            name:     "Root node",
+            input:    "$",
+            yaml:     "foo",
+            expected: []string{"foo"},
+        },
+        {
+            name:  "Single child",
+            input: "$.store",
+            yaml: `
 store:
   book: 
     - title: Book 1
     - title: Book 2
 `,
-			expected: []string{
-				"book:\n    - title: Book 1\n    - title: Book 2",
-			},
-		},
-		{
-			name:  "Multiple children",
-			input: "$.store.book[*].title",
-			yaml: `
+            expected: []string{
+                "book:\n    - title: Book 1\n    - title: Book 2",
+            },
+        },
+        {
+            name:  "Multiple children",
+            input: "$.store.book[*].title",
+            yaml: `
 store:
   book: 
     - title: Book 1
     - title: Book 2
 `,
-			expected: []string{"Book 1", "Book 2"},
-		},
-		{
-			name:     "Array index",
-			input:    "$[1]",
-			yaml:     "[foo, bar, baz]",
-			expected: []string{"bar"},
-		},
-		{
-			name:     "Array slice",
-			input:    "$[1:3]",
-			yaml:     "[foo, bar, baz, qux]",
-			expected: []string{"bar", "baz"},
-		},
-		{
-			name:     "Array slice with step",
-			input:    "$[0:5:2]",
-			yaml:     "[foo, bar, baz, qux, quux]",
-			expected: []string{"foo", "baz", "quux"},
-		},
-		{
-			name:  "Filter expression",
-			input: "$.store.book[?(@.price < 10)].title",
-			yaml: `
+            expected: []string{"Book 1", "Book 2"},
+        },
+        {
+            name:     "Array index",
+            input:    "$[1]",
+            yaml:     "[foo, bar, baz]",
+            expected: []string{"bar"},
+        },
+        {
+            name:     "Array slice",
+            input:    "$[1:3]",
+            yaml:     "[foo, bar, baz, qux]",
+            expected: []string{"bar", "baz"},
+        },
+        {
+            name:     "Array slice with step",
+            input:    "$[0:5:2]",
+            yaml:     "[foo, bar, baz, qux, quux]",
+            expected: []string{"foo", "baz", "quux"},
+        },
+        {
+            name:  "Filter expression",
+            input: "$.store.book[?(@.price < 10)].title",
+            yaml: `
 store:
   book:
     - title: Book 1 
@@ -75,12 +75,12 @@ store:
     - title: Book 2
       price: 12.99
 `,
-			expected: []string{"Book 1"},
-		},
-		{
-			name:  "Nested filter expression",
-			input: "$.store.book[?(@.price < 10 && @.category == 'fiction')].title",
-			yaml: `
+            expected: []string{"Book 1"},
+        },
+        {
+            name:  "Nested filter expression",
+            input: "$.store.book[?(@.price < 10 && @.category == 'fiction')].title",
+            yaml: `
 store:
   book:
     - title: Book 1
@@ -90,78 +90,78 @@ store:
       price: 8.99
       category: non-fiction
 `,
-			expected: []string{"Book 1"},
-		},
-	}
+            expected: []string{"Book 1"},
+        },
+    }
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			var root yaml.Node
-			err := yaml.Unmarshal([]byte(test.yaml), &root)
-			if err != nil {
-				t.Errorf("Error parsing YAML: %v", err)
-				return
-			}
+    for _, test := range tests {
+        t.Run(test.name, func(t *testing.T) {
+            var root yaml.Node
+            err := yaml.Unmarshal([]byte(test.yaml), &root)
+            if err != nil {
+                t.Errorf("Error parsing YAML: %v", err)
+                return
+            }
 
-			tokenizer := token.NewTokenizer(test.input)
-			parser := newParserPrivate(tokenizer, tokenizer.Tokenize())
-			err = parser.parse()
-			if err != nil {
-				t.Errorf("Error parsing JSON Path: %v", err)
-				return
-			}
+            tokenizer := token.NewTokenizer(test.input)
+            parser := newParserPrivate(tokenizer, tokenizer.Tokenize())
+            err = parser.parse()
+            if err != nil {
+                t.Errorf("Error parsing JSON Path: %v", err)
+                return
+            }
 
-			result := parser.ast.Query(&root, &root)
-			var actual []string
-			for _, node := range result {
-				actual = append(actual, nodeToString(node))
-			}
+            result := parser.ast.Query(&root, &root)
+            var actual []string
+            for _, node := range result {
+                actual = append(actual, nodeToString(node))
+            }
 
-			if !reflect.DeepEqual(actual, test.expected) {
-				t.Errorf("Expected:\n%v\nGot:\n%v", test.expected, actual)
-			}
-		})
-	}
+            if !reflect.DeepEqual(actual, test.expected) {
+                t.Errorf("Expected:\n%v\nGot:\n%v", test.expected, actual)
+            }
+        })
+    }
 }
 
 func nodeToString(node *yaml.Node) string {
-	var builder strings.Builder
-	err := yaml.NewEncoder(&builder).Encode(node)
-	if err != nil {
-		panic(err)
-	}
-	return strings.TrimSpace(builder.String())
+    var builder strings.Builder
+    err := yaml.NewEncoder(&builder).Encode(node)
+    if err != nil {
+        panic(err)
+    }
+    return strings.TrimSpace(builder.String())
 }
 
 func TestPropertyNameQuery(t *testing.T) {
-	tests := []struct {
-		name     string
-		input    string
-		yaml     string
-		expected []string
-	}{
-		{
-			name:  "Simple property name",
-			input: "$.store~",
-			yaml: `
+    tests := []struct {
+        name     string
+        input    string
+        yaml     string
+        expected []string
+    }{
+        {
+            name:  "Simple property name",
+            input: "$.store~",
+            yaml: `
 store: book-store
 `,
-			expected: []string{"store"},
-		},
-		{
-			name:  "Property name in filter",
-			input: "$.items[?(@~ == 'a')]",
-			yaml: `
+            expected: []string{"store"},
+        },
+        {
+            name:  "Property name in filter",
+            input: "$.items[?(@~ == 'a')]",
+            yaml: `
 items:
   a: item1
   b: item2
 `,
-			expected: []string{"item1"},
-		},
-		{
-			name:  "Chained property names",
-			input: "$.store.items[*].type~",
-			yaml: `
+            expected: []string{"item1"},
+        },
+        {
+            name:  "Chained property names",
+            input: "$.store.items[*].type~",
+            yaml: `
 store:
   items:
     - type: book
@@ -169,58 +169,58 @@ store:
     - type: magazine
       name: Magazine 1
 `,
-			expected: []string{"type", "type"},
-		},
-		{
-			name:  "Property name in a function",
-			input: "$.store.items[?(length(@~) == 2)].found",
-			yaml: `
+            expected: []string{"type", "type"},
+        },
+        {
+            name:  "Property name in a function",
+            input: "$.store.items[?(length(@~) == 2)].found",
+            yaml: `
 store:
   items:
     ab: { found: true } 
     cdef: { found: false }
 `,
-			expected: []string{"true"},
-		},
-		{
-			name:  "Property name in a function inverse case",
-			input: "$.store.items[?(length(@~) != 2)].found",
-			yaml: `
+            expected: []string{"true"},
+        },
+        {
+            name:  "Property name in a function inverse case",
+            input: "$.store.items[?(length(@~) != 2)].found",
+            yaml: `
 store:
   items:
     ab: { found: true } 
     cdef: { found: false }
 `,
-			expected: []string{"false"},
-		},
-		{
-			name:  "Property name on nested objects",
-			input: "$.deeply.nested.object~",
-			yaml: `
+            expected: []string{"false"},
+        },
+        {
+            name:  "Property name on nested objects",
+            input: "$.deeply.nested.object~",
+            yaml: `
 deeply:
   nested:
     object:
       key1: value1
       key2: value2
 `,
-			expected: []string{"object"},
-		},
-		{
-			name:  "All property names on a nested object",
-			input: "$.deeply.nested.object[*]~",
-			yaml: `
+            expected: []string{"object"},
+        },
+        {
+            name:  "All property names on a nested object",
+            input: "$.deeply.nested.object[*]~",
+            yaml: `
 deeply:
   nested:
     object:
       key1: value1
       key2: value2
 `,
-			expected: []string{"key1", "key2"},
-		},
-		{
-			name:  "All property names on multiple nested objects",
-			input: "$.deeply.[*].object[*]~",
-			yaml: `
+            expected: []string{"key1", "key2"},
+        },
+        {
+            name:  "All property names on multiple nested objects",
+            input: "$.deeply.[*].object[*]~",
+            yaml: `
 deeply:
   nested:
     object:
@@ -231,12 +231,12 @@ deeply:
       key3: value3
       key4: value4
 `,
-			expected: []string{"key1", "key2", "key3", "key4"},
-		},
-		{
-			name:  "Custom x-my-ignore extension filter",
-			input: "$.paths[?@[\"x-my-ignore\"][?@ == \"match\"]].found",
-			yaml: `
+            expected: []string{"key1", "key2", "key3", "key4"},
+        },
+        {
+            name:  "Custom x-my-ignore extension filter",
+            input: "$.paths[?@[\"x-my-ignore\"][?@ == \"match\"]].found",
+            yaml: `
 openapi: 3.1.0
 info:
   title: Test
@@ -253,36 +253,36 @@ paths:
     x-my-ignore: [not_matched]
     found: false
 `,
-			expected: []string{"true"},
-		},
-	}
+            expected: []string{"true"},
+        },
+    }
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			var root yaml.Node
-			err := yaml.Unmarshal([]byte(test.yaml), &root)
-			if err != nil {
-				t.Errorf("Error parsing YAML: %v", err)
-				return
-			}
+    for _, test := range tests {
+        t.Run(test.name, func(t *testing.T) {
+            var root yaml.Node
+            err := yaml.Unmarshal([]byte(test.yaml), &root)
+            if err != nil {
+                t.Errorf("Error parsing YAML: %v", err)
+                return
+            }
 
-			tokenizer := token.NewTokenizer(test.input, config.WithPropertyNameExtension())
-			parser := newParserPrivate(tokenizer, tokenizer.Tokenize(), config.WithPropertyNameExtension())
-			err = parser.parse()
-			if err != nil {
-				t.Errorf("Error parsing JSON Path: %v", err)
-				return
-			}
+            tokenizer := token.NewTokenizer(test.input, config.WithPropertyNameExtension())
+            parser := newParserPrivate(tokenizer, tokenizer.Tokenize(), config.WithPropertyNameExtension())
+            err = parser.parse()
+            if err != nil {
+                t.Errorf("Error parsing JSON Path: %v", err)
+                return
+            }
 
-			result := parser.ast.Query(&root, &root)
-			var actual []string
-			for _, node := range result {
-				actual = append(actual, nodeToString(node))
-			}
+            result := parser.ast.Query(&root, &root)
+            var actual []string
+            for _, node := range result {
+                actual = append(actual, nodeToString(node))
+            }
 
-			if !reflect.DeepEqual(actual, test.expected) {
-				t.Errorf("Expected:\n%v\nGot:\n%v", test.expected, actual)
-			}
-		})
-	}
+            if !reflect.DeepEqual(actual, test.expected) {
+                t.Errorf("Expected:\n%v\nGot:\n%v", test.expected, actual)
+            }
+        })
+    }
 }
