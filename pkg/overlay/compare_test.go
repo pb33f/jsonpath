@@ -2,7 +2,7 @@ package overlay_test
 
 import (
     "fmt"
-    "github.com/speakeasy-api/jsonpath/pkg/overlay"
+    "github.com/pb33f/jsonpath/pkg/overlay"
     "github.com/stretchr/testify/assert"
     "github.com/stretchr/testify/require"
     "go.yaml.in/yaml/v4"

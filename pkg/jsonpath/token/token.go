@@ -1,10 +1,10 @@
 package token
 
 import (
-	"fmt"
-	"github.com/speakeasy-api/jsonpath/pkg/jsonpath/config"
-	"strconv"
-	"strings"
+    "fmt"
+    "github.com/pb33f/jsonpath/pkg/jsonpath/config"
+    "strconv"
+    "strings"
 )
 
 // *****************************************************************************
@@ -162,223 +162,223 @@ type Token int
 
 // The list of tokens.
 const (
-	ILLEGAL Token = iota
-	STRING
-	INTEGER
-	FLOAT
-	STRING_LITERAL
-	TRUE
-	FALSE
-	NULL
-	ROOT
-	CURRENT
-	WILDCARD
-	PROPERTY_NAME
-	RECURSIVE
-	CHILD
-	ARRAY_SLICE
-	FILTER
-	PAREN_LEFT
-	PAREN_RIGHT
-	BRACKET_LEFT
-	BRACKET_RIGHT
-	COMMA
-	TILDE
-	AND
-	OR
-	NOT
-	EQ
-	NE
-	GT
-	GE
-	LT
-	LE
-	MATCHES
-	FUNCTION
+    ILLEGAL Token = iota
+    STRING
+    INTEGER
+    FLOAT
+    STRING_LITERAL
+    TRUE
+    FALSE
+    NULL
+    ROOT
+    CURRENT
+    WILDCARD
+    PROPERTY_NAME
+    RECURSIVE
+    CHILD
+    ARRAY_SLICE
+    FILTER
+    PAREN_LEFT
+    PAREN_RIGHT
+    BRACKET_LEFT
+    BRACKET_RIGHT
+    COMMA
+    TILDE
+    AND
+    OR
+    NOT
+    EQ
+    NE
+    GT
+    GE
+    LT
+    LE
+    MATCHES
+    FUNCTION
 )
 
 var SimpleTokens = [...]Token{
-	STRING,
-	INTEGER,
-	STRING_LITERAL,
-	CHILD,
-	BRACKET_LEFT,
-	BRACKET_RIGHT,
-	ROOT,
+    STRING,
+    INTEGER,
+    STRING_LITERAL,
+    CHILD,
+    BRACKET_LEFT,
+    BRACKET_RIGHT,
+    ROOT,
 }
 
 var tokens = [...]string{
-	ILLEGAL:        "ILLEGAL",
-	STRING:         "STRING",
-	INTEGER:        "INTEGER",
-	FLOAT:          "FLOAT",
-	STRING_LITERAL: "STRING_LITERAL",
-	TRUE:           "TRUE",
-	FALSE:          "FALSE",
-	NULL:           "NULL",
-	// root node identifier (Section 2.2)
-	ROOT: "$",
-	// current node identifier (Section 2.3.5)
-	// (valid only within filter selectors)
-	CURRENT:   "@",
-	WILDCARD:  "*",
-	RECURSIVE: "..",
-	CHILD:     ".",
-	// start:end:step array slice operator (Section 2.3.4)
-	ARRAY_SLICE: ":",
-	// filter selector (Section 2.3.5): selects
-	// particular children using a logical
-	// expression
-	FILTER:        "?",
-	PAREN_LEFT:    "(",
-	PAREN_RIGHT:   ")",
-	BRACKET_LEFT:  "[",
-	BRACKET_RIGHT: "]",
-	COMMA:         ",",
-	TILDE:         "~",
-	AND:           "&&",
-	OR:            "||",
-	NOT:           "!",
-	EQ:            "==",
-	NE:            "!=",
-	GT:            ">",
-	GE:            ">=",
-	LT:            "<",
-	LE:            "<=",
-	MATCHES:       "=~",
-	FUNCTION:      "FUNCTION",
+    ILLEGAL:        "ILLEGAL",
+    STRING:         "STRING",
+    INTEGER:        "INTEGER",
+    FLOAT:          "FLOAT",
+    STRING_LITERAL: "STRING_LITERAL",
+    TRUE:           "TRUE",
+    FALSE:          "FALSE",
+    NULL:           "NULL",
+    // root node identifier (Section 2.2)
+    ROOT: "$",
+    // current node identifier (Section 2.3.5)
+    // (valid only within filter selectors)
+    CURRENT:   "@",
+    WILDCARD:  "*",
+    RECURSIVE: "..",
+    CHILD:     ".",
+    // start:end:step array slice operator (Section 2.3.4)
+    ARRAY_SLICE: ":",
+    // filter selector (Section 2.3.5): selects
+    // particular children using a logical
+    // expression
+    FILTER:        "?",
+    PAREN_LEFT:    "(",
+    PAREN_RIGHT:   ")",
+    BRACKET_LEFT:  "[",
+    BRACKET_RIGHT: "]",
+    COMMA:         ",",
+    TILDE:         "~",
+    AND:           "&&",
+    OR:            "||",
+    NOT:           "!",
+    EQ:            "==",
+    NE:            "!=",
+    GT:            ">",
+    GE:            ">=",
+    LT:            "<",
+    LE:            "<=",
+    MATCHES:       "=~",
+    FUNCTION:      "FUNCTION",
 }
 
 // String returns the string representation of the token.
 func (tok Token) String() string {
-	if tok >= 0 && tok < Token(len(tokens)) {
-		return tokens[tok]
-	}
-	return "token(" + strconv.Itoa(int(tok)) + ")"
+    if tok >= 0 && tok < Token(len(tokens)) {
+        return tokens[tok]
+    }
+    return "token(" + strconv.Itoa(int(tok)) + ")"
 }
 
 func (tok Tokens) IsSimple() bool {
-	if len(tok) == 0 {
-		return false
-	}
-	if tok[0].Token != ROOT {
-		return false
-	}
-	for _, token := range tok {
-		isSimple := false
-		for _, simpleToken := range SimpleTokens {
-			if token.Token == simpleToken {
-				isSimple = true
-			}
-		}
-		if !isSimple {
-			return false
-		}
-	}
-	return true
+    if len(tok) == 0 {
+        return false
+    }
+    if tok[0].Token != ROOT {
+        return false
+    }
+    for _, token := range tok {
+        isSimple := false
+        for _, simpleToken := range SimpleTokens {
+            if token.Token == simpleToken {
+                isSimple = true
+            }
+        }
+        if !isSimple {
+            return false
+        }
+    }
+    return true
 }
 
 // When there's an error in the tokenizer, this helps represent it.
 func (t Tokenizer) ErrorString(target *TokenInfo, msg string) string {
-	var errorBuilder strings.Builder
+    var errorBuilder strings.Builder
 
-	var token TokenInfo
-	if target == nil {
-		// grab last token (as value)
-		token = t.tokens[len(t.tokens)-1]
-		// set column to +1
-		token.Column++
-		target = &token
-	}
+    var token TokenInfo
+    if target == nil {
+        // grab last token (as value)
+        token = t.tokens[len(t.tokens)-1]
+        // set column to +1
+        token.Column++
+        target = &token
+    }
 
-	// Write the error message with line and column information
-	errorBuilder.WriteString(fmt.Sprintf("Error at line %d, column %d: %s\n", target.Line, target.Column, msg))
+    // Write the error message with line and column information
+    errorBuilder.WriteString(fmt.Sprintf("Error at line %d, column %d: %s\n", target.Line, target.Column, msg))
 
-	// Find the start and end positions of the line containing the target token
-	lineStart := 0
-	lineEnd := len(t.input)
-	for i := target.Line - 1; i > 0; i-- {
-		if pos := strings.LastIndexByte(t.input[:lineStart], '\n'); pos != -1 {
-			lineStart = pos + 1
-			break
-		}
-	}
-	if pos := strings.IndexByte(t.input[lineStart:], '\n'); pos != -1 {
-		lineEnd = lineStart + pos
-	}
+    // Find the start and end positions of the line containing the target token
+    lineStart := 0
+    lineEnd := len(t.input)
+    for i := target.Line - 1; i > 0; i-- {
+        if pos := strings.LastIndexByte(t.input[:lineStart], '\n'); pos != -1 {
+            lineStart = pos + 1
+            break
+        }
+    }
+    if pos := strings.IndexByte(t.input[lineStart:], '\n'); pos != -1 {
+        lineEnd = lineStart + pos
+    }
 
-	// Extract the line containing the target token
-	line := t.input[lineStart:lineEnd]
-	errorBuilder.WriteString(line)
-	errorBuilder.WriteString("\n")
+    // Extract the line containing the target token
+    line := t.input[lineStart:lineEnd]
+    errorBuilder.WriteString(line)
+    errorBuilder.WriteString("\n")
 
-	// Calculate the number of spaces before the target token
-	spaces := strings.Repeat(" ", target.Column)
+    // Calculate the number of spaces before the target token
+    spaces := strings.Repeat(" ", target.Column)
 
-	// Write the caret symbol pointing to the target token
-	errorBuilder.WriteString(spaces)
-	dots := ""
-	if target.Len > 0 {
-		dots = strings.Repeat(".", target.Len-1)
-	}
-	errorBuilder.WriteString("^" + dots + "\n")
+    // Write the caret symbol pointing to the target token
+    errorBuilder.WriteString(spaces)
+    dots := ""
+    if target.Len > 0 {
+        dots = strings.Repeat(".", target.Len-1)
+    }
+    errorBuilder.WriteString("^" + dots + "\n")
 
-	return errorBuilder.String()
+    return errorBuilder.String()
 }
 
 // When there's an error
 func (t Tokenizer) ErrorTokenString(target *TokenInfo, msg string) string {
-	var errorBuilder strings.Builder
-	var token TokenInfo
-	if target == nil {
-		// grab last token (as value)
-		token = t.tokens[len(t.tokens)-1]
-		// set column to +1
-		token.Column++
-		target = &token
-	}
-	// Write the error message with line and column information
-	errorBuilder.WriteString(t.ErrorString(target, msg))
+    var errorBuilder strings.Builder
+    var token TokenInfo
+    if target == nil {
+        // grab last token (as value)
+        token = t.tokens[len(t.tokens)-1]
+        // set column to +1
+        token.Column++
+        target = &token
+    }
+    // Write the error message with line and column information
+    errorBuilder.WriteString(t.ErrorString(target, msg))
 
-	// Find the start and end positions of the line containing the target token
-	lineStart := 0
-	lineEnd := len(t.input)
-	for i := target.Line - 1; i > 0; i-- {
-		if pos := strings.LastIndexByte(t.input[:lineStart], '\n'); pos != -1 {
-			lineStart = pos + 1
-			break
-		}
-	}
-	if pos := strings.IndexByte(t.input[lineStart:], '\n'); pos != -1 {
-		lineEnd = lineStart + pos
-	}
+    // Find the start and end positions of the line containing the target token
+    lineStart := 0
+    lineEnd := len(t.input)
+    for i := target.Line - 1; i > 0; i-- {
+        if pos := strings.LastIndexByte(t.input[:lineStart], '\n'); pos != -1 {
+            lineStart = pos + 1
+            break
+        }
+    }
+    if pos := strings.IndexByte(t.input[lineStart:], '\n'); pos != -1 {
+        lineEnd = lineStart + pos
+    }
 
-	// Extract the line containing the target token
-	line := t.input[lineStart:lineEnd]
+    // Extract the line containing the target token
+    line := t.input[lineStart:lineEnd]
 
-	// Calculate the number of spaces before the target token
-	for _, token := range t.tokens {
-		errorBuilder.WriteString(line)
-		errorBuilder.WriteString("\n")
-		spaces := strings.Repeat(" ", token.Column)
-		dots := ""
-		if token.Len > 0 {
-			dots = strings.Repeat(".", token.Len-1)
-		}
-		errorBuilder.WriteString(spaces)
-		errorBuilder.WriteString(fmt.Sprintf("^%s %s\n", dots, tokens[token.Token]))
-	}
+    // Calculate the number of spaces before the target token
+    for _, token := range t.tokens {
+        errorBuilder.WriteString(line)
+        errorBuilder.WriteString("\n")
+        spaces := strings.Repeat(" ", token.Column)
+        dots := ""
+        if token.Len > 0 {
+            dots = strings.Repeat(".", token.Len-1)
+        }
+        errorBuilder.WriteString(spaces)
+        errorBuilder.WriteString(fmt.Sprintf("^%s %s\n", dots, tokens[token.Token]))
+    }
 
-	return errorBuilder.String()
+    return errorBuilder.String()
 }
 
 // TokenInfo represents a token and its associated information.
 type TokenInfo struct {
-	Token   Token
-	Line    int
-	Column  int
-	Literal string
-	Len     int
+    Token   Token
+    Line    int
+    Column  int
+    Literal string
+    Len     int
 }
 
 // Tokens represents the list of tokens
@@ -386,391 +386,391 @@ type Tokens []TokenInfo
 
 // Tokenizer represents a JSONPath tokenizer.
 type Tokenizer struct {
-	input             string
-	pos               int
-	line              int
-	column            int
-	tokens            []TokenInfo
-	stack             []Token
-	illegalWhitespace bool
-	config            config.Config
+    input             string
+    pos               int
+    line              int
+    column            int
+    tokens            []TokenInfo
+    stack             []Token
+    illegalWhitespace bool
+    config            config.Config
 }
 
 // NewTokenizer creates a new JSONPath tokenizer for the given input string.
 func NewTokenizer(input string, opts ...config.Option) *Tokenizer {
-	cfg := config.New(opts...)
-	return &Tokenizer{
-		input:  input,
-		config: cfg,
-		line:   1,
-		stack:  make([]Token, 0),
-	}
+    cfg := config.New(opts...)
+    return &Tokenizer{
+        input:  input,
+        config: cfg,
+        line:   1,
+        stack:  make([]Token, 0),
+    }
 }
 
 // Tokenize tokenizes the input string and returns a slice of TokenInfo.
 func (t *Tokenizer) Tokenize() Tokens {
-	for t.pos < len(t.input) {
-		if !t.illegalWhitespace {
-			t.skipWhitespace()
-		}
-		if t.pos >= len(t.input) {
-			break
-		}
+    for t.pos < len(t.input) {
+        if !t.illegalWhitespace {
+            t.skipWhitespace()
+        }
+        if t.pos >= len(t.input) {
+            break
+        }
 
-		switch ch := t.input[t.pos]; {
-		case ch == '$':
-			t.addToken(ROOT, 1, "")
-		case ch == '@':
-			t.addToken(CURRENT, 1, "")
-		case ch == '*':
-			t.addToken(WILDCARD, 1, "")
-		case ch == '~':
-			if t.config.PropertyNameEnabled() {
-				t.addToken(PROPERTY_NAME, 1, "")
-			} else {
-				t.addToken(ILLEGAL, 1, "invalid property name token without config.PropertyNameExtension set to true")
-			}
-		case ch == '.':
-			if t.peek() == '.' {
-				t.addToken(RECURSIVE, 2, "")
-				t.pos++
-				t.column++
-				t.illegalWhitespace = true
-			} else {
-				t.addToken(CHILD, 1, "")
-				t.illegalWhitespace = true
-			}
-		case ch == ',':
-			t.addToken(COMMA, 1, "")
-		case ch == ':':
-			t.addToken(ARRAY_SLICE, 1, "")
-		case ch == '?':
-			t.addToken(FILTER, 1, "")
-		case ch == '(':
-			t.addToken(PAREN_LEFT, 1, "")
-			t.stack = append(t.stack, PAREN_LEFT)
-		case ch == ')':
-			t.addToken(PAREN_RIGHT, 1, "")
-			if len(t.stack) > 0 && t.stack[len(t.stack)-1] == PAREN_LEFT {
-				t.stack = t.stack[:len(t.stack)-1]
-			} else {
-				t.addToken(ILLEGAL, 1, "unmatched closing parenthesis")
-			}
-		case ch == '[':
-			t.addToken(BRACKET_LEFT, 1, "")
-			t.stack = append(t.stack, BRACKET_LEFT)
-		case ch == ']':
-			if len(t.stack) > 0 && t.stack[len(t.stack)-1] == BRACKET_LEFT {
-				t.addToken(BRACKET_RIGHT, 1, "")
-				t.stack = t.stack[:len(t.stack)-1]
-			} else {
-				t.addToken(ILLEGAL, 1, "unmatched closing bracket")
-			}
-		case ch == '&':
-			if t.peek() == '&' {
-				t.addToken(AND, 2, "")
-				t.pos++
-				t.column++
-			} else {
-				t.addToken(ILLEGAL, 1, "invalid token")
-			}
-		case ch == '|':
-			if t.peek() == '|' {
-				t.addToken(OR, 2, "")
-				t.pos++
-				t.column++
-			} else {
-				t.addToken(ILLEGAL, 1, "invalid token")
-			}
-		case ch == '!':
-			if t.peek() == '=' {
-				t.addToken(NE, 2, "")
-				t.pos++
-				t.column++
-			} else {
-				t.addToken(NOT, 1, "")
-			}
-		case ch == '=':
-			if t.peek() == '=' {
-				t.addToken(EQ, 2, "")
-				t.pos++
-				t.column++
-			} else if t.peek() == '~' {
-				t.addToken(MATCHES, 2, "")
-				t.pos++
-				t.column++
-			} else {
-				t.addToken(ILLEGAL, 1, "invalid token")
-			}
-		case ch == '>':
-			if t.peek() == '=' {
-				t.addToken(GE, 2, "")
-				t.pos++
-				t.column++
-			} else {
-				t.addToken(GT, 1, "")
-			}
-		case ch == '<':
-			if t.peek() == '=' {
-				t.addToken(LE, 2, "")
-				t.pos++
-				t.column++
-			} else {
-				t.addToken(LT, 1, "")
-			}
-		case ch == '"' || ch == '\'':
-			t.scanString(rune(ch))
-		case ch == '-' && isDigit(t.peek()):
-			fallthrough
-		case isDigit(ch):
-			t.scanNumber()
-		case isLiteralChar(ch):
-			t.scanLiteral()
-		default:
-			t.addToken(ILLEGAL, 1, string(ch))
-		}
-		t.pos++
-		t.column++
-	}
+        switch ch := t.input[t.pos]; {
+        case ch == '$':
+            t.addToken(ROOT, 1, "")
+        case ch == '@':
+            t.addToken(CURRENT, 1, "")
+        case ch == '*':
+            t.addToken(WILDCARD, 1, "")
+        case ch == '~':
+            if t.config.PropertyNameEnabled() {
+                t.addToken(PROPERTY_NAME, 1, "")
+            } else {
+                t.addToken(ILLEGAL, 1, "invalid property name token without config.PropertyNameExtension set to true")
+            }
+        case ch == '.':
+            if t.peek() == '.' {
+                t.addToken(RECURSIVE, 2, "")
+                t.pos++
+                t.column++
+                t.illegalWhitespace = true
+            } else {
+                t.addToken(CHILD, 1, "")
+                t.illegalWhitespace = true
+            }
+        case ch == ',':
+            t.addToken(COMMA, 1, "")
+        case ch == ':':
+            t.addToken(ARRAY_SLICE, 1, "")
+        case ch == '?':
+            t.addToken(FILTER, 1, "")
+        case ch == '(':
+            t.addToken(PAREN_LEFT, 1, "")
+            t.stack = append(t.stack, PAREN_LEFT)
+        case ch == ')':
+            t.addToken(PAREN_RIGHT, 1, "")
+            if len(t.stack) > 0 && t.stack[len(t.stack)-1] == PAREN_LEFT {
+                t.stack = t.stack[:len(t.stack)-1]
+            } else {
+                t.addToken(ILLEGAL, 1, "unmatched closing parenthesis")
+            }
+        case ch == '[':
+            t.addToken(BRACKET_LEFT, 1, "")
+            t.stack = append(t.stack, BRACKET_LEFT)
+        case ch == ']':
+            if len(t.stack) > 0 && t.stack[len(t.stack)-1] == BRACKET_LEFT {
+                t.addToken(BRACKET_RIGHT, 1, "")
+                t.stack = t.stack[:len(t.stack)-1]
+            } else {
+                t.addToken(ILLEGAL, 1, "unmatched closing bracket")
+            }
+        case ch == '&':
+            if t.peek() == '&' {
+                t.addToken(AND, 2, "")
+                t.pos++
+                t.column++
+            } else {
+                t.addToken(ILLEGAL, 1, "invalid token")
+            }
+        case ch == '|':
+            if t.peek() == '|' {
+                t.addToken(OR, 2, "")
+                t.pos++
+                t.column++
+            } else {
+                t.addToken(ILLEGAL, 1, "invalid token")
+            }
+        case ch == '!':
+            if t.peek() == '=' {
+                t.addToken(NE, 2, "")
+                t.pos++
+                t.column++
+            } else {
+                t.addToken(NOT, 1, "")
+            }
+        case ch == '=':
+            if t.peek() == '=' {
+                t.addToken(EQ, 2, "")
+                t.pos++
+                t.column++
+            } else if t.peek() == '~' {
+                t.addToken(MATCHES, 2, "")
+                t.pos++
+                t.column++
+            } else {
+                t.addToken(ILLEGAL, 1, "invalid token")
+            }
+        case ch == '>':
+            if t.peek() == '=' {
+                t.addToken(GE, 2, "")
+                t.pos++
+                t.column++
+            } else {
+                t.addToken(GT, 1, "")
+            }
+        case ch == '<':
+            if t.peek() == '=' {
+                t.addToken(LE, 2, "")
+                t.pos++
+                t.column++
+            } else {
+                t.addToken(LT, 1, "")
+            }
+        case ch == '"' || ch == '\'':
+            t.scanString(rune(ch))
+        case ch == '-' && isDigit(t.peek()):
+            fallthrough
+        case isDigit(ch):
+            t.scanNumber()
+        case isLiteralChar(ch):
+            t.scanLiteral()
+        default:
+            t.addToken(ILLEGAL, 1, string(ch))
+        }
+        t.pos++
+        t.column++
+    }
 
-	if len(t.stack) > 0 {
-		t.addToken(ILLEGAL, 1, fmt.Sprintf("unmatched %s", t.stack[len(t.stack)-1].String()))
-	}
-	return t.tokens
+    if len(t.stack) > 0 {
+        t.addToken(ILLEGAL, 1, fmt.Sprintf("unmatched %s", t.stack[len(t.stack)-1].String()))
+    }
+    return t.tokens
 }
 
 func (t *Tokenizer) addToken(token Token, len int, literal string) {
-	t.tokens = append(t.tokens, TokenInfo{
-		Token:   token,
-		Line:    t.line,
-		Column:  t.column,
-		Len:     len,
-		Literal: literal,
-	})
-	t.illegalWhitespace = false
+    t.tokens = append(t.tokens, TokenInfo{
+        Token:   token,
+        Line:    t.line,
+        Column:  t.column,
+        Len:     len,
+        Literal: literal,
+    })
+    t.illegalWhitespace = false
 }
 
 func (t *Tokenizer) scanString(quote rune) {
-	start := t.pos + 1
-	var literal strings.Builder
+    start := t.pos + 1
+    var literal strings.Builder
 illegal:
-	for i := start; i < len(t.input); i++ {
-		b := literal.String()
-		_ = b
-		if t.input[i] == byte(quote) {
-			t.addToken(STRING_LITERAL, len(t.input[start:i])+2, literal.String())
-			t.pos = i
-			t.column += i - start + 1
-			return
-		}
-		if t.input[i] == '\\' {
-			i++
-			if i >= len(t.input) {
-				t.addToken(ILLEGAL, len(t.input[start:]), literal.String())
-				t.pos = len(t.input) - 1
-				t.column = len(t.input) - 1
-				return
-			}
-			switch t.input[i] {
-			case 'b':
-				literal.WriteByte('\b')
-			case 'f':
-				literal.WriteByte('\f')
-			case 'n':
-				literal.WriteByte('\n')
-			case 'r':
-				literal.WriteByte('\n')
-			case 't':
-				literal.WriteByte('\t')
-			case '\'':
-				if quote != '\'' {
-					// don't escape it, when we're not in a single quoted string
-					break illegal
-				} else {
-					literal.WriteByte(t.input[i])
-				}
-			case '"':
-				if quote != '"' {
-					// don't escape it, when we're not in a single quoted string
-					break illegal
-				} else {
-					literal.WriteByte(t.input[i])
-				}
-			case '\\', '/':
-				literal.WriteByte(t.input[i])
-			default:
-				break illegal
-			}
-		} else {
-			literal.WriteByte(t.input[i])
-		}
-	}
-	t.addToken(ILLEGAL, len(t.input[start:]), literal.String())
-	t.pos = len(t.input) - 1
-	t.column = len(t.input) - 1
+    for i := start; i < len(t.input); i++ {
+        b := literal.String()
+        _ = b
+        if t.input[i] == byte(quote) {
+            t.addToken(STRING_LITERAL, len(t.input[start:i])+2, literal.String())
+            t.pos = i
+            t.column += i - start + 1
+            return
+        }
+        if t.input[i] == '\\' {
+            i++
+            if i >= len(t.input) {
+                t.addToken(ILLEGAL, len(t.input[start:]), literal.String())
+                t.pos = len(t.input) - 1
+                t.column = len(t.input) - 1
+                return
+            }
+            switch t.input[i] {
+            case 'b':
+                literal.WriteByte('\b')
+            case 'f':
+                literal.WriteByte('\f')
+            case 'n':
+                literal.WriteByte('\n')
+            case 'r':
+                literal.WriteByte('\n')
+            case 't':
+                literal.WriteByte('\t')
+            case '\'':
+                if quote != '\'' {
+                    // don't escape it, when we're not in a single quoted string
+                    break illegal
+                } else {
+                    literal.WriteByte(t.input[i])
+                }
+            case '"':
+                if quote != '"' {
+                    // don't escape it, when we're not in a single quoted string
+                    break illegal
+                } else {
+                    literal.WriteByte(t.input[i])
+                }
+            case '\\', '/':
+                literal.WriteByte(t.input[i])
+            default:
+                break illegal
+            }
+        } else {
+            literal.WriteByte(t.input[i])
+        }
+    }
+    t.addToken(ILLEGAL, len(t.input[start:]), literal.String())
+    t.pos = len(t.input) - 1
+    t.column = len(t.input) - 1
 }
 
 func (t *Tokenizer) scanNumber() {
-	start := t.pos
-	tokenType := INTEGER
-	dotSeen := false
-	exponentSeen := false
+    start := t.pos
+    tokenType := INTEGER
+    dotSeen := false
+    exponentSeen := false
 
-	for i := start; i < len(t.input); i++ {
-		if i == start && t.input[i] == '-' {
-			continue
-		}
+    for i := start; i < len(t.input); i++ {
+        if i == start && t.input[i] == '-' {
+            continue
+        }
 
-		if t.input[i] == '.' {
-			if dotSeen || exponentSeen {
-				t.addToken(ILLEGAL, len(t.input[start:i]), t.input[start:i])
-				t.pos = i
-				t.column += i - start
-				return
-			}
-			tokenType = FLOAT
-			dotSeen = true
-			continue
-		}
+        if t.input[i] == '.' {
+            if dotSeen || exponentSeen {
+                t.addToken(ILLEGAL, len(t.input[start:i]), t.input[start:i])
+                t.pos = i
+                t.column += i - start
+                return
+            }
+            tokenType = FLOAT
+            dotSeen = true
+            continue
+        }
 
-		if t.input[i] == 'e' || t.input[i] == 'E' {
-			if exponentSeen || (len(t.input) > 0 && t.input[i-1] == '.') {
-				t.addToken(ILLEGAL, len(t.input[start:i]), t.input[start:i])
-				t.pos = i
-				t.column += i - start
-				return
-			}
-			tokenType = FLOAT
-			exponentSeen = true
-			if i+1 < len(t.input) && (t.input[i+1] == '+' || t.input[i+1] == '-') {
-				i++
-			}
-			continue
-		}
+        if t.input[i] == 'e' || t.input[i] == 'E' {
+            if exponentSeen || (len(t.input) > 0 && t.input[i-1] == '.') {
+                t.addToken(ILLEGAL, len(t.input[start:i]), t.input[start:i])
+                t.pos = i
+                t.column += i - start
+                return
+            }
+            tokenType = FLOAT
+            exponentSeen = true
+            if i+1 < len(t.input) && (t.input[i+1] == '+' || t.input[i+1] == '-') {
+                i++
+            }
+            continue
+        }
 
-		if !isDigit(t.input[i]) {
-			literal := t.input[start:i]
-			// check for legal numbers
-			_, err := strconv.ParseFloat(literal, 64)
-			if err != nil {
-				tokenType = ILLEGAL
-			}
-			// conformance spec
-			if len(literal) > 1 && literal[0] == '0' && !dotSeen {
-				// no leading zero
-				tokenType = ILLEGAL
-			} else if len(literal) > 2 && literal[0] == '-' && literal[1] == '0' && !dotSeen {
-				// no trailing dot
-				tokenType = ILLEGAL
-			} else if len(literal) > 0 && literal[len(literal)-1] == '.' {
-				// no trailing dot
-				tokenType = ILLEGAL
-			} else if literal[len(literal)-1] == 'e' || literal[len(literal)-1] == 'E' {
-				// no exponent
-				tokenType = ILLEGAL
-			}
+        if !isDigit(t.input[i]) {
+            literal := t.input[start:i]
+            // check for legal numbers
+            _, err := strconv.ParseFloat(literal, 64)
+            if err != nil {
+                tokenType = ILLEGAL
+            }
+            // conformance spec
+            if len(literal) > 1 && literal[0] == '0' && !dotSeen {
+                // no leading zero
+                tokenType = ILLEGAL
+            } else if len(literal) > 2 && literal[0] == '-' && literal[1] == '0' && !dotSeen {
+                // no trailing dot
+                tokenType = ILLEGAL
+            } else if len(literal) > 0 && literal[len(literal)-1] == '.' {
+                // no trailing dot
+                tokenType = ILLEGAL
+            } else if literal[len(literal)-1] == 'e' || literal[len(literal)-1] == 'E' {
+                // no exponent
+                tokenType = ILLEGAL
+            }
 
-			t.addToken(tokenType, len(literal), literal)
-			t.pos = i - 1
-			t.column += i - start - 1
-			return
-		}
-	}
+            t.addToken(tokenType, len(literal), literal)
+            t.pos = i - 1
+            t.column += i - start - 1
+            return
+        }
+    }
 
-	if exponentSeen && !isDigit(t.input[len(t.input)-1]) {
-		t.addToken(ILLEGAL, len(t.input[start:]), t.input[start:])
-		t.pos = len(t.input) - 1
-		t.column = len(t.input) - 1
-		return
-	}
+    if exponentSeen && !isDigit(t.input[len(t.input)-1]) {
+        t.addToken(ILLEGAL, len(t.input[start:]), t.input[start:])
+        t.pos = len(t.input) - 1
+        t.column = len(t.input) - 1
+        return
+    }
 
-	literal := t.input[start:]
-	t.addToken(tokenType, len(literal), literal)
-	t.pos = len(t.input) - 1
-	t.column = len(t.input) - 1
+    literal := t.input[start:]
+    t.addToken(tokenType, len(literal), literal)
+    t.pos = len(t.input) - 1
+    t.column = len(t.input) - 1
 }
 
 func (t *Tokenizer) scanLiteral() {
-	start := t.pos
-	for i := start; i < len(t.input); i++ {
-		if !isLiteralChar(t.input[i]) && !isDigit(t.input[i]) {
-			literal := t.input[start:i]
-			switch literal {
-			case "true":
-				t.addToken(TRUE, len(literal), literal)
-			case "false":
-				t.addToken(FALSE, len(literal), literal)
-			case "null":
-				t.addToken(NULL, len(literal), literal)
-			default:
-				if isFunctionName(literal) {
-					t.addToken(FUNCTION, len(literal), literal)
-					t.illegalWhitespace = true
-				} else {
-					t.addToken(STRING, len(literal), literal)
-				}
-			}
-			t.pos = i - 1
-			t.column += i - start - 1
-			return
-		}
-	}
-	literal := t.input[start:]
-	switch literal {
-	case "true":
-		t.addToken(TRUE, len(literal), literal)
-	case "false":
-		t.addToken(FALSE, len(literal), literal)
-	case "null":
-		t.addToken(NULL, len(literal), literal)
-	default:
-		t.addToken(STRING, len(literal), literal)
-	}
-	t.pos = len(t.input) - 1
-	t.column = len(t.input) - 1
+    start := t.pos
+    for i := start; i < len(t.input); i++ {
+        if !isLiteralChar(t.input[i]) && !isDigit(t.input[i]) {
+            literal := t.input[start:i]
+            switch literal {
+            case "true":
+                t.addToken(TRUE, len(literal), literal)
+            case "false":
+                t.addToken(FALSE, len(literal), literal)
+            case "null":
+                t.addToken(NULL, len(literal), literal)
+            default:
+                if isFunctionName(literal) {
+                    t.addToken(FUNCTION, len(literal), literal)
+                    t.illegalWhitespace = true
+                } else {
+                    t.addToken(STRING, len(literal), literal)
+                }
+            }
+            t.pos = i - 1
+            t.column += i - start - 1
+            return
+        }
+    }
+    literal := t.input[start:]
+    switch literal {
+    case "true":
+        t.addToken(TRUE, len(literal), literal)
+    case "false":
+        t.addToken(FALSE, len(literal), literal)
+    case "null":
+        t.addToken(NULL, len(literal), literal)
+    default:
+        t.addToken(STRING, len(literal), literal)
+    }
+    t.pos = len(t.input) - 1
+    t.column = len(t.input) - 1
 }
 
 func isFunctionName(literal string) bool {
-	return literal == "length" || literal == "count" || literal == "match" || literal == "search" || literal == "value"
+    return literal == "length" || literal == "count" || literal == "match" || literal == "search" || literal == "value"
 }
 
 func (t *Tokenizer) skipWhitespace() {
-	//   S                   = *B        ; optional blank space
-	//   B                   = %x20 /    ; Space
-	//                         %x09 /    ; Horizontal tab
-	//                         %x0A /    ; Line feed or New line
-	//                         %x0D      ; Carriage return
-	for len(t.tokens) > 0 && t.pos+1 < len(t.input) {
-		ch := t.input[t.pos]
-		if ch == '\n' {
-			t.line++
-			t.pos++
-			t.column = 0
-		} else if !isSpace(ch) {
-			break
-		} else {
-			t.pos++
-			t.column++
-		}
-	}
+    //   S                   = *B        ; optional blank space
+    //   B                   = %x20 /    ; Space
+    //                         %x09 /    ; Horizontal tab
+    //                         %x0A /    ; Line feed or New line
+    //                         %x0D      ; Carriage return
+    for len(t.tokens) > 0 && t.pos+1 < len(t.input) {
+        ch := t.input[t.pos]
+        if ch == '\n' {
+            t.line++
+            t.pos++
+            t.column = 0
+        } else if !isSpace(ch) {
+            break
+        } else {
+            t.pos++
+            t.column++
+        }
+    }
 }
 
 func (t *Tokenizer) peek() byte {
-	if t.pos+1 < len(t.input) {
-		return t.input[t.pos+1]
-	}
-	return 0
+    if t.pos+1 < len(t.input) {
+        return t.input[t.pos+1]
+    }
+    return 0
 }
 
 func isDigit(ch byte) bool {
-	return '0' <= ch && ch <= '9'
+    return '0' <= ch && ch <= '9'
 }
 
 func isLiteralChar(ch byte) bool {
-	// allow unicode characters
-	return 'a' <= ch && ch <= 'z' || 'A' <= ch && ch <= 'Z' || ch == '_' || ch >= 0x80
+    // allow unicode characters
+    return 'a' <= ch && ch <= 'z' || 'A' <= ch && ch <= 'Z' || ch == '_' || ch >= 0x80
 }
 
 func isSpace(ch byte) bool {
-	return ch == ' ' || ch == '\t' || ch == '\r'
+    return ch == ' ' || ch == '\t' || ch == '\r'
 }

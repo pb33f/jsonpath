@@ -8,7 +8,7 @@ import (
     "testing"
 
     "github.com/pmezard/go-difflib/difflib"
-    "github.com/speakeasy-api/jsonpath/pkg/jsonpath"
+    "github.com/pb33f/jsonpath/pkg/jsonpath"
     "github.com/stretchr/testify/require"
     "go.yaml.in/yaml/v4"
 )

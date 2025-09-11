@@ -1,8 +1,8 @@
 package overlay
 
 import (
-    "github.com/speakeasy-api/jsonpath/pkg/jsonpath"
-    "github.com/speakeasy-api/jsonpath/pkg/jsonpath/config"
+    "github.com/pb33f/jsonpath/pkg/jsonpath"
+    "github.com/pb33f/jsonpath/pkg/jsonpath/config"
     "go.yaml.in/yaml/v4"
 )
 

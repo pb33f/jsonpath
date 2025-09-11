@@ -1,8 +1,8 @@
 package jsonpath
 
 import (
-    "github.com/speakeasy-api/jsonpath/pkg/jsonpath/config"
-    "github.com/speakeasy-api/jsonpath/pkg/jsonpath/token"
+    "github.com/pb33f/jsonpath/pkg/jsonpath/config"
+    "github.com/pb33f/jsonpath/pkg/jsonpath/token"
     "go.yaml.in/yaml/v4"
     "reflect"
     "strings"
