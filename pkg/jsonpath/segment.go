@@ -11,6 +11,7 @@ const (
     segmentKindChild       segmentKind = iota // .
     segmentKindDescendant                     // ..
     segmentKindProperyName                    // ~ (extension only)
+    segmentKindParent                         // ^ (JSONPath Plus parent selector)
 )
 
 type segment struct {
@@ -39,6 +40,8 @@ func (s segment) ToString() string {
         return ".." + s.descendant.ToString()
     case segmentKindProperyName:
         return "~"
+    case segmentKindParent:
+        return "^"
     }
     panic("unknown segment kind")
 }

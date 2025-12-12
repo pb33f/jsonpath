@@ -1,224 +1,381 @@
-<div align="center">
- <a href="https://www.speakeasy.com/" target="_blank">
-  <img width="1500" height="500" alt="Speakeasy" src="https://github.com/user-attachments/assets/0e56055b-02a3-4476-9130-4be299e5a39c" />
- </a>
- <br />
- <br />
-  <div>
-   <a href="https://speakeasy.com/docs/create-client-sdks/" target="_blank"><b>Docs Quickstart</b></a>&nbsp;&nbsp;//&nbsp;&nbsp;<a href="https://go.speakeasy.com/slack" target="_blank"><b>Join us on Slack</b></a>
-  </div>
- <br />
+# pb33f jsonpath
 
-</div>
+[![Go Doc](https://img.shields.io/badge/godoc-reference-blue.svg?style=for-the-badge)](https://pkg.go.dev/github.com/pb33f/jsonpath?tab=doc)
 
-# jsonpath
+A full implementation of [RFC 9535 JSONPath](https://datatracker.ietf.org/doc/rfc9535/) with **JSONPath Plus** extensions for enhanced querying capabilities.
 
-<a href="https://pkg.go.dev/github.com/speakeasy-api/jsonpath?tab=doc"><img alt="Go Doc" src="https://img.shields.io/badge/godoc-reference-blue.svg?style=for-the-badge"></a>
+This library was forked from [speakeasy-api/jsonpath](https://github.com/speakeasy-api/jsonpath).
 
-This is a full implementation of [RFC 9535](https://datatracker.ietf.org/doc/rfc9535/)
+## What is JSONPath Plus?
 
-It is build to be wasm compatible. A playground application is available at [overlay.speakeasy.com](https://overlay.speakeasy.com/)
+JSONPath Plus extends the standard JSONPath specification with powerful context-aware operators, type selectors, and navigation features. These extensions are inspired by and compatible with [JSONPath-Plus/JSONPath](https://github.com/JSONPath-Plus/JSONPath) (the JavaScript reference implementation).
 
-Everything within RFC9535 is in scope. Grammars outside RFC 9535 are not in scope.
+**Key benefits:**
+- **100% backward compatible** with RFC 9535 - all standard queries work unchanged
+- **Context variables** (`@property`, `@path`, `@parent`, etc.) for advanced filtering
+- **Type selectors** (`isString()`, `isNumber()`, etc.) for type-based filtering
+- **Parent navigation** (`^`) for traversing up the document tree
 
 ## Installation
 
-This application is included in the [speakeasy](https://github.com/speakeasy-api/speakeasy) CLI, but is also available as a standalone library.
+```bash
+go get github.com/pb33f/jsonpath
+```
 
-## ABNF grammar
+## Quick Start
+
+```go
+package main
+
+import (
+    "fmt"
+    "github.com/pb33f/jsonpath/pkg/jsonpath"
+    "go.yaml.in/yaml/v4"
+)
+
+func main() {
+    data := `
+store:
+  book:
+    - title: "Book 1"
+      price: 10
+    - title: "Book 2"
+      price: 20
+`
+    var node yaml.Node
+    yaml.Unmarshal([]byte(data), &node)
+
+    // Standard RFC 9535 query
+    path, _ := jsonpath.NewPath(`$.store.book[?(@.price > 15)]`)
+    results := path.Query(&node)
+
+    // JSONPath Plus query with @property
+    path2, _ := jsonpath.NewPath(`$.store.*[?(@property == 'book')]`)
+    results2 := path2.Query(&node)
+}
+```
+
+---
+
+## JSONPath Plus Extensions
+
+### Context Variables
+
+Context variables provide information about the current evaluation context within filter expressions. They are prefixed with `@` and can be used in comparisons.
+
+#### `@property`
+
+Returns the property name (for objects) or index as string (for arrays) used to reach the current node.
+
+```yaml
+# Data
+paths:
+  /users:
+    get: { summary: "Get users" }
+    post: { summary: "Create user" }
+  /orders:
+    get: { summary: "Get orders" }
+```
 
 ```
-   jsonpath-query      = root-identifier segments
-   segments            = *(S segment)
+# Query: Find all GET operations
+$.paths.*[?(@property == 'get')]
 
-   B                   = %x20 /    ; Space
-                         %x09 /    ; Horizontal tab
-                         %x0A /    ; Line feed or New line
-                         %x0D      ; Carriage return
-   S                   = *B        ; optional blank space
-   root-identifier     = "$"
-   selector            = name-selector /
-                         wildcard-selector /
-                         slice-selector /
-                         index-selector /
-                         filter-selector
-   name-selector       = string-literal
-
-   string-literal      = %x22 *double-quoted %x22 /     ; "string"
-                         %x27 *single-quoted %x27       ; 'string'
-
-   double-quoted       = unescaped /
-                         %x27      /                    ; '
-                         ESC %x22  /                    ; \"
-                         ESC escapable
-
-   single-quoted       = unescaped /
-                         %x22      /                    ; "
-                         ESC %x27  /                    ; \'
-                         ESC escapable
-
-   ESC                 = %x5C                           ; \ backslash
-
-   unescaped           = %x20-21 /                      ; see RFC 8259
-                            ; omit 0x22 "
-                         %x23-26 /
-                            ; omit 0x27 '
-                         %x28-5B /
-                            ; omit 0x5C \
-                         %x5D-D7FF /
-                            ; skip surrogate code points
-                         %xE000-10FFFF
-
-   escapable           = %x62 / ; b BS backspace U+0008
-                         %x66 / ; f FF form feed U+000C
-                         %x6E / ; n LF line feed U+000A
-                         %x72 / ; r CR carriage return U+000D
-                         %x74 / ; t HT horizontal tab U+0009
-                         "/"  / ; / slash (solidus) U+002F
-                         "\"  / ; \ backslash (reverse solidus) U+005C
-                         (%x75 hexchar) ;  uXXXX U+XXXX
-
-   hexchar             = non-surrogate /
-                         (high-surrogate "\" %x75 low-surrogate)
-   non-surrogate       = ((DIGIT / "A"/"B"/"C" / "E"/"F") 3HEXDIG) /
-                         ("D" %x30-37 2HEXDIG )
-   high-surrogate      = "D" ("8"/"9"/"A"/"B") 2HEXDIG
-   low-surrogate       = "D" ("C"/"D"/"E"/"F") 2HEXDIG
-
-   HEXDIG              = DIGIT / "A" / "B" / "C" / "D" / "E" / "F"
-   wildcard-selector   = "*"
-   index-selector      = int                        ; decimal integer
-
-   int                 = "0" /
-                         (["-"] DIGIT1 *DIGIT)      ; - optional
-   DIGIT1              = %x31-39                    ; 1-9 non-zero digit
-   slice-selector      = [start S] ":" S [end S] [":" [S step ]]
-
-   start               = int       ; included in selection
-   end                 = int       ; not included in selection
-   step                = int       ; default: 1
-   filter-selector     = "?" S logical-expr
-   logical-expr        = logical-or-expr
-   logical-or-expr     = logical-and-expr *(S "||" S logical-and-expr)
-                           ; disjunction
-                           ; binds less tightly than conjunction
-   logical-and-expr    = basic-expr *(S "&&" S basic-expr)
-                           ; conjunction
-                           ; binds more tightly than disjunction
-
-   basic-expr          = paren-expr /
-                         comparison-expr /
-                         test-expr
-
-   paren-expr          = [logical-not-op S] "(" S logical-expr S ")"
-                                           ; parenthesized expression
-   logical-not-op      = "!"               ; logical NOT operator
-   test-expr           = [logical-not-op S]
-                         (filter-query / ; existence/non-existence
-                          function-expr) ; LogicalType or NodesType
-   filter-query        = rel-query / jsonpath-query
-   rel-query           = current-node-identifier segments
-   current-node-identifier = "@"
-   comparison-expr     = comparable S comparison-op S comparable
-   literal             = number / string-literal /
-                         true / false / null
-   comparable          = literal /
-                         singular-query / ; singular query value
-                         function-expr    ; ValueType
-   comparison-op       = "==" / "!=" /
-                         "<=" / ">=" /
-                         "<"  / ">"
-
-   singular-query      = rel-singular-query / abs-singular-query
-   rel-singular-query  = current-node-identifier singular-query-segments
-   abs-singular-query  = root-identifier singular-query-segments
-   singular-query-segments = *(S (name-segment / index-segment))
-   name-segment        = ("[" name-selector "]") /
-                         ("." member-name-shorthand)
-   index-segment       = "[" index-selector "]"
-   number              = (int / "-0") [ frac ] [ exp ] ; decimal number
-   frac                = "." 1*DIGIT                  ; decimal fraction
-   exp                 = "e" [ "-" / "+" ] 1*DIGIT    ; decimal exponent
-   true                = %x74.72.75.65                ; true
-   false               = %x66.61.6c.73.65             ; false
-   null                = %x6e.75.6c.6c                ; null
-   function-name       = function-name-first *function-name-char
-   function-name-first = LCALPHA
-   function-name-char  = function-name-first / "_" / DIGIT
-   LCALPHA             = %x61-7A  ; "a".."z"
-
-   function-expr       = function-name "(" S [function-argument
-                            *(S "," S function-argument)] S ")"
-   function-argument   = literal /
-                         filter-query / ; (includes singular-query)
-                         logical-expr /
-                         function-expr
-   segment             = child-segment / descendant-segment
-   child-segment       = bracketed-selection /
-                         ("."
-                          (wildcard-selector /
-                           member-name-shorthand))
-
-   bracketed-selection = "[" S selector *(S "," S selector) S "]"
-
-   member-name-shorthand = name-first *name-char
-   name-first          = ALPHA /
-                         "_"   /
-                         %x80-D7FF /
-                            ; skip surrogate code points
-                         %xE000-10FFFF
-   name-char           = name-first / DIGIT
-
-   DIGIT               = %x30-39              ; 0-9
-   ALPHA               = %x41-5A / %x61-7A    ; A-Z / a-z
-   descendant-segment  = ".." (bracketed-selection /
-                               wildcard-selector /
-                               member-name-shorthand)
-
-                Figure 2: Collected ABNF of JSONPath Queries
-
-   Figure 3 contains the collected ABNF grammar that defines the syntax
-   of a JSONPath Normalized Path while also using the rules root-
-   identifier, ESC, DIGIT, and DIGIT1 from Figure 2.
-
-   normalized-path      = root-identifier *(normal-index-segment)
-   normal-index-segment = "[" normal-selector "]"
-   normal-selector      = normal-name-selector / normal-index-selector
-   normal-name-selector = %x27 *normal-single-quoted %x27 ; 'string'
-   normal-single-quoted = normal-unescaped /
-                          ESC normal-escapable
-   normal-unescaped     =    ; omit %x0-1F control codes
-                          %x20-26 /
-                             ; omit 0x27 '
-                          %x28-5B /
-                             ; omit 0x5C \
-                          %x5D-D7FF /
-                             ; skip surrogate code points
-                          %xE000-10FFFF
-
-   normal-escapable     = %x62 / ; b BS backspace U+0008
-                          %x66 / ; f FF form feed U+000C
-                          %x6E / ; n LF line feed U+000A
-                          %x72 / ; r CR carriage return U+000D
-                          %x74 / ; t HT horizontal tab U+0009
-                          "'" /  ; ' apostrophe U+0027
-                          "\" /  ; \ backslash (reverse solidus) U+005C
-                          (%x75 normal-hexchar)
-                                          ; certain values u00xx U+00XX
-   normal-hexchar       = "0" "0"
-                          (
-                             ("0" %x30-37) / ; "00"-"07"
-                                ; omit U+0008-U+000A BS HT LF
-                             ("0" %x62) /    ; "0b"
-                                ; omit U+000C-U+000D FF CR
-                             ("0" %x65-66) / ; "0e"-"0f"
-                             ("1" normal-HEXDIG)
-                          )
-   normal-HEXDIG        = DIGIT / %x61-66    ; "0"-"9", "a"-"f"
-   normal-index-selector = "0" / (DIGIT1 *DIGIT)
-                           ; non-negative decimal integer
+# Returns: The get objects under /users and /orders
 ```
+
+#### `@path`
+
+Returns the normalized JSONPath string to the current node being evaluated.
+
+```yaml
+# Data
+store:
+  book:
+    - title: "Book 1"
+    - title: "Book 2"
+```
+
+```
+# Query: Find the first book by its path
+$.store.book[?(@path == "$['store']['book'][0]")]
+
+# Returns: The first book object
+```
+
+#### `@parent`
+
+Returns the parent node of the current node being evaluated. Requires parent tracking to be enabled (automatic when used).
+
+```yaml
+# Data
+items:
+  - name: "Item 1"
+    category: "A"
+  - name: "Item 2"
+    category: "B"
+```
+
+```
+# Query: Find items where parent is an array
+$.items[?(@parent)]
+
+# Returns: All items (parent is the items array)
+```
+
+#### `@parentProperty`
+
+Returns the property name or index used to reach the parent of the current node.
+
+```yaml
+# Data
+store:
+  book:
+    details: { price: 10 }
+  bicycle:
+    details: { price: 20 }
+```
+
+```
+# Query: Find details where parent was reached via 'book'
+$.store.*[?(@parentProperty == 'book')]
+
+# Returns: The details object under book
+```
+
+#### `@root`
+
+Provides access to the document root from within filter expressions.
+
+```yaml
+# Data
+config:
+  defaultPrice: 10
+items:
+  - name: "Item 1"
+    price: 10
+  - name: "Item 2"
+    price: 20
+```
+
+```
+# Query: Find items matching the default price
+$.items[?(@.price == @root.config.defaultPrice)]
+
+# Returns: Item 1
+```
+
+#### `@index`
+
+Returns the current array index (-1 if not in an array context).
+
+```yaml
+# Data
+items:
+  - name: "First"
+  - name: "Second"
+  - name: "Third"
+```
+
+```
+# Query: Find items at even indices
+$.items[?(@index == 0 || @index == 2)]
+
+# Returns: First and Third items
+```
+
+---
+
+### Type Selector Functions
+
+Type selectors filter nodes based on their data type. They can be used within filter expressions.
+
+| Function | Matches |
+|----------|---------|
+| `isNull(@)` | Null values |
+| `isBoolean(@)` | Boolean values (`true`/`false`) |
+| `isNumber(@)` | Numeric values (integers and floats) |
+| `isInteger(@)` | Integer values only |
+| `isString(@)` | String values |
+| `isArray(@)` | Array/sequence nodes |
+| `isObject(@)` | Object/mapping nodes |
+
+#### Examples
+
+```yaml
+# Data
+mixed:
+  - 42
+  - "hello"
+  - true
+  - null
+  - [1, 2, 3]
+  - { key: "value" }
+```
+
+```
+# Query: Find all string values
+$.mixed[?isString(@)]
+# Returns: "hello"
+
+# Query: Find all numeric values
+$.mixed[?isNumber(@)]
+# Returns: 42
+
+# Query: Find all arrays
+$.mixed[?isArray(@)]
+# Returns: [1, 2, 3]
+
+# Query: Find all objects
+$.mixed[?isObject(@)]
+# Returns: { key: "value" }
+```
+
+---
+
+### Parent Selector (`^`)
+
+The caret operator (`^`) returns the parent of the matched node. This allows you to navigate up the document tree.
+
+```yaml
+# Data
+store:
+  book:
+    - title: "Expensive Book"
+      price: 100
+    - title: "Cheap Book"
+      price: 5
+```
+
+```
+# Query: Find parents of expensive items (price > 50)
+$.store.book[?(@.price > 50)]^
+
+# Returns: The book array (parent of the matching book)
+```
+
+**Note:** Using `^` on the root node returns an empty result.
+
+---
+
+### Property Name Selector (`~`)
+
+The tilde operator (`~`) returns the property name (key) instead of the value.
+
+```yaml
+# Data
+person:
+  name: "John"
+  age: 30
+  city: "NYC"
+```
+
+```
+# Query: Get all property names
+$.person.*~
+
+# Returns: ["name", "age", "city"]
+```
+
+---
+
+## Standard RFC 9535 Features
+
+This library fully implements RFC 9535, including:
+
+### Selectors
+
+| Selector | Example | Description |
+|----------|---------|-------------|
+| Root | `$` | The root node |
+| Current | `@` | Current node (in filters) |
+| Child | `.property` or `['property']` | Direct child access |
+| Recursive | `..property` | Descendant search |
+| Wildcard | `.*` or `[*]` | All children |
+| Array Index | `[0]`, `[-1]` | Specific index (negative from end) |
+| Array Slice | `[0:5]`, `[::2]` | Range with optional step |
+| Filter | `[?(@.price < 10)]` | Conditional selection |
+| Union | `[0,1,2]` or `['a','b']` | Multiple selections |
+
+### Filter Operators
+
+| Operator | Description |
+|----------|-------------|
+| `==` | Equal |
+| `!=` | Not equal |
+| `<` | Less than |
+| `<=` | Less than or equal |
+| `>` | Greater than |
+| `>=` | Greater than or equal |
+| `&&` | Logical AND |
+| `\|\|` | Logical OR |
+| `!` | Logical NOT |
+
+### Built-in Functions
+
+| Function | Description |
+|----------|-------------|
+| `length(@)` | Length of string, array, or object |
+| `count(@)` | Number of nodes in a nodelist |
+| `match(@.name, 'pattern')` | Regex full match |
+| `search(@.name, 'pattern')` | Regex partial match |
+| `value(@)` | Extract value from single-node result |
+
+---
+
+## Examples
+
+### Filtering by Property Name
+
+```
+# Find all HTTP methods in an OpenAPI spec
+$.paths.*[?(@property == 'get' || @property == 'post')]
+```
+
+### Complex Path Matching
+
+```
+# Find nodes at a specific path pattern
+$.store.*.items[*][?(@path == "$['store']['electronics']['items'][0]")]
+```
+
+### Type-Safe Queries
+
+```
+# Find all string properties in a config
+$..config.*[?isString(@)]
+```
+
+### Parent Navigation
+
+```
+# Get containers of items over $100
+$..[?(@.price > 100)]^
+```
+
+### Combining Features
+
+```
+# Find GET operations where parent path contains 'users'
+$.paths[?(@property == '/users')].get
+```
+
+---
+
+## ABNF Grammar
+
+The complete ABNF grammar for RFC 9535 JSONPath is available in the [RFC 9535 specification](https://datatracker.ietf.org/doc/rfc9535/).
+
+---
 
 ## Contributing
 
-We welcome contributions to this repository! Please open a Github issue or a Pull Request if you have an implementation for a bug fix or feature. This repository is compliant with the [jsonpath standard compliance test suite](https://github.com/jsonpath-standard/jsonpath-compliance-test-suite/tree/9277705cda4489c3d0d984831e7656e48145399b)
+We welcome contributions! Please open a GitHub issue or Pull Request for bug fixes or features.
+
+This library is compliant with the [JSONPath Compliance Test Suite](https://github.com/jsonpath-standard/jsonpath-compliance-test-suite).
+
+---
+
+## License
+
+See [LICENSE](LICENSE) for details.

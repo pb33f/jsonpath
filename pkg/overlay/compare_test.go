@@ -7,6 +7,7 @@ import (
     "github.com/stretchr/testify/require"
     "go.yaml.in/yaml/v4"
     "os"
+    "strings"
     "testing"
 )
 
@@ -55,7 +56,11 @@ func TestCompare(t *testing.T) {
 
     // Uncomment this if we've improved the output
     //os.WriteFile("testdata/overlay-generated.yaml", []byte(o2s), 0644)
-    assert.Equal(t, o1s, o2s)
+
+    // Normalize line endings for cross-platform compatibility (Windows CRLF vs Unix LF)
+    o1sNorm := strings.ReplaceAll(o1s, "\r\n", "\n")
+    o2sNorm := strings.ReplaceAll(o2s, "\r\n", "\n")
+    assert.Equal(t, o1sNorm, o2sNorm)
 
     // round trip it
     err = o.ApplyTo(node)

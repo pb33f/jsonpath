@@ -6,6 +6,7 @@ import (
     "github.com/stretchr/testify/require"
     "go.yaml.in/yaml/v4"
     "os"
+    "strings"
     "testing"
 )
 
@@ -34,7 +35,11 @@ func NodeMatchesFile(
     //t.Log("### EXPECT START ###\n" + string(expectedBytes) + "\n### EXPECT END ###\n")
     //t.Log("### ACTUAL START ###\n" + actualBuf.string() + "\n### ACTUAL END ###\n")
 
-    assert.Equal(t, string(expectedBytes), actualBuf.String(), variadoc("node does not match expected file: ")...)
+    // Normalize line endings for cross-platform compatibility (Windows CRLF vs Unix LF)
+    expectedStr := strings.ReplaceAll(string(expectedBytes), "\r\n", "\n")
+    actualStr := strings.ReplaceAll(actualBuf.String(), "\r\n", "\n")
+
+    assert.Equal(t, expectedStr, actualStr, variadoc("node does not match expected file: ")...)
 }
 
 func TestApplyTo(t *testing.T) {

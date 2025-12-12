@@ -1,57 +1,205 @@
 package jsonpath
 
 import (
-    "go.yaml.in/yaml/v4"
+	"strconv"
+
+	"go.yaml.in/yaml/v4"
 )
 
 type Evaluator interface {
-    Query(current *yaml.Node, root *yaml.Node) []*yaml.Node
+	Query(current *yaml.Node, root *yaml.Node) []*yaml.Node
 }
 
+// index is the basic interface for tracking property key relationships.
+// This is kept for backward compatibility; FilterContext extends this.
 type index interface {
-    setPropertyKey(key *yaml.Node, value *yaml.Node)
-    getPropertyKey(key *yaml.Node) *yaml.Node
+	setPropertyKey(key *yaml.Node, value *yaml.Node)
+	getPropertyKey(key *yaml.Node) *yaml.Node
+	setParentNode(child *yaml.Node, parent *yaml.Node)
+	getParentNode(child *yaml.Node) *yaml.Node
 }
 
 type _index struct {
-    propertyKeys map[*yaml.Node]*yaml.Node
+	propertyKeys map[*yaml.Node]*yaml.Node
+	parentNodes  map[*yaml.Node]*yaml.Node // Maps child nodes to their parent nodes
 }
 
 func (i *_index) setPropertyKey(key *yaml.Node, value *yaml.Node) {
-    if i != nil && i.propertyKeys != nil {
-        i.propertyKeys[key] = value
-    }
+	if i != nil && i.propertyKeys != nil {
+		i.propertyKeys[key] = value
+	}
 }
 
 func (i *_index) getPropertyKey(key *yaml.Node) *yaml.Node {
-    if i != nil {
-        return i.propertyKeys[key]
-    }
-    return nil
+	if i != nil {
+		return i.propertyKeys[key]
+	}
+	return nil
+}
+
+func (i *_index) setParentNode(child *yaml.Node, parent *yaml.Node) {
+	if i != nil && i.parentNodes != nil {
+		i.parentNodes[child] = parent
+	}
+}
+
+func (i *_index) getParentNode(child *yaml.Node) *yaml.Node {
+	if i != nil && i.parentNodes != nil {
+		return i.parentNodes[child]
+	}
+	return nil
 }
 
 // jsonPathAST can be Evaluated
 var _ Evaluator = jsonPathAST{}
 
 func (q jsonPathAST) Query(current *yaml.Node, root *yaml.Node) []*yaml.Node {
-    idx := _index{
-        propertyKeys: map[*yaml.Node]*yaml.Node{},
-    }
-    result := make([]*yaml.Node, 0)
-    // If the top level node is a documentnode, unwrap it
-    if root.Kind == yaml.DocumentNode && len(root.Content) == 1 {
-        root = root.Content[0]
-    }
-    result = append(result, root)
+	if root.Kind == yaml.DocumentNode && len(root.Content) == 1 {
+		root = root.Content[0]
+	}
 
-    for _, segment := range q.segments {
-        newValue := []*yaml.Node{}
-        for _, value := range result {
-            newValue = append(newValue, segment.Query(&idx, value, root)...)
-        }
-        result = newValue
-    }
-    return result
+	ctx := NewFilterContext(root)
+
+	// Only enable parent tracking if the query uses ^ or @parent
+	if q.hasParentReferences() {
+		ctx.EnableParentTracking()
+	}
+
+	result := make([]*yaml.Node, 0)
+	result = append(result, root)
+
+	for _, segment := range q.segments {
+		newValue := []*yaml.Node{}
+		for _, value := range result {
+			newValue = append(newValue, segment.Query(ctx, value, root)...)
+		}
+		result = newValue
+	}
+	return result
+}
+
+// hasParentReferences checks if the AST uses parent selectors (^) or @parent context variable
+func (q jsonPathAST) hasParentReferences() bool {
+	for _, seg := range q.segments {
+		if seg.hasParentReferences() {
+			return true
+		}
+	}
+	return false
+}
+
+func (s *segment) hasParentReferences() bool {
+	if s.kind == segmentKindParent {
+		return true
+	}
+	if s.child != nil && s.child.hasParentReferences() {
+		return true
+	}
+	if s.descendant != nil && s.descendant.hasParentReferences() {
+		return true
+	}
+	return false
+}
+
+func (s *innerSegment) hasParentReferences() bool {
+	for _, sel := range s.selectors {
+		if sel.hasParentReferences() {
+			return true
+		}
+	}
+	return false
+}
+
+func (s *selector) hasParentReferences() bool {
+	if s.filter != nil && s.filter.hasParentReferences() {
+		return true
+	}
+	return false
+}
+
+func (f *filterSelector) hasParentReferences() bool {
+	if f.expression != nil {
+		return f.expression.hasParentReferences()
+	}
+	return false
+}
+
+func (e *logicalOrExpr) hasParentReferences() bool {
+	for _, expr := range e.expressions {
+		if expr.hasParentReferences() {
+			return true
+		}
+	}
+	return false
+}
+
+func (e *logicalAndExpr) hasParentReferences() bool {
+	for _, expr := range e.expressions {
+		if expr.hasParentReferences() {
+			return true
+		}
+	}
+	return false
+}
+
+func (e *basicExpr) hasParentReferences() bool {
+	if e.parenExpr != nil && e.parenExpr.expr != nil {
+		return e.parenExpr.expr.hasParentReferences()
+	}
+	if e.comparisonExpr != nil {
+		return e.comparisonExpr.hasParentReferences()
+	}
+	if e.testExpr != nil {
+		return e.testExpr.hasParentReferences()
+	}
+	return false
+}
+
+func (e *comparisonExpr) hasParentReferences() bool {
+	if e.left != nil && e.left.hasParentReferences() {
+		return true
+	}
+	if e.right != nil && e.right.hasParentReferences() {
+		return true
+	}
+	return false
+}
+
+func (c *comparable) hasParentReferences() bool {
+	if c.contextVar != nil && c.contextVar.kind == contextVarParent {
+		return true
+	}
+	if c.singularQuery != nil {
+		if c.singularQuery.relQuery != nil {
+			for _, seg := range c.singularQuery.relQuery.segments {
+				if seg.hasParentReferences() {
+					return true
+				}
+			}
+		}
+	}
+	return false
+}
+
+func (e *testExpr) hasParentReferences() bool {
+	if e.filterQuery != nil {
+		if e.filterQuery.relQuery != nil {
+			for _, seg := range e.filterQuery.relQuery.segments {
+				if seg.hasParentReferences() {
+					return true
+				}
+			}
+		}
+	}
+	return false
+}
+
+// parentTrackingEnabled checks if parent tracking is enabled in the index
+func parentTrackingEnabled(idx index) bool {
+	if fc, ok := idx.(FilterContext); ok {
+		return fc.ParentTrackingEnabled()
+	}
+	return false
 }
 
 func (s segment) Query(idx index, value *yaml.Node, root *yaml.Node) []*yaml.Node {
@@ -74,6 +222,14 @@ func (s segment) Query(idx index, value *yaml.Node, root *yaml.Node) []*yaml.Nod
             return []*yaml.Node{found}
         }
         return []*yaml.Node{}
+    case segmentKindParent:
+        // JSONPath Plus parent selector: ^ returns the parent of the current node
+        parent := idx.getParentNode(value)
+        if parent != nil {
+            return []*yaml.Node{parent}
+        }
+        // No parent found (could be root node)
+        return []*yaml.Node{}
     }
     panic("no segment type")
 }
@@ -93,31 +249,57 @@ func unique(nodes []*yaml.Node) []*yaml.Node {
 
 func (s innerSegment) Query(idx index, value *yaml.Node, root *yaml.Node) []*yaml.Node {
     result := []*yaml.Node{}
+    trackParents := parentTrackingEnabled(idx)
 
     switch s.kind {
     case segmentDotWildcard:
-        // Handle wildcard - get all children
+        // Check for inherited pending segment from previous wildcard/slice
+        var inheritedPending string
+        if fc, ok := idx.(FilterContext); ok {
+            inheritedPending = fc.GetAndClearPendingPathSegment(value)
+        }
+
         switch value.Kind {
         case yaml.MappingNode:
-            // in a mapping node, keys and values alternate
-            // we just want to return the values
             for i, child := range value.Content {
                 if i%2 == 1 {
-                    idx.setPropertyKey(value.Content[i-1], value)
-                    idx.setPropertyKey(child, value.Content[i-1])
+                    keyNode := value.Content[i-1]
+                    idx.setPropertyKey(keyNode, value)
+                    idx.setPropertyKey(child, keyNode)
+                    if trackParents {
+                        idx.setParentNode(child, value)
+                    }
+                    // Track pending path segment and property name for this node
+                    if fc, ok := idx.(FilterContext); ok {
+                        thisSegment := normalizePathSegment(keyNode.Value)
+                        fc.SetPendingPathSegment(child, inheritedPending+thisSegment)
+                        fc.SetPendingPropertyName(child, keyNode.Value) // For @parentProperty
+                    }
                     result = append(result, child)
                 }
             }
         case yaml.SequenceNode:
-            for _, child := range value.Content {
+            for i, child := range value.Content {
+                if trackParents {
+                    idx.setParentNode(child, value)
+                }
+                // Track pending path segment and property name for this node
+                if fc, ok := idx.(FilterContext); ok {
+                    thisSegment := normalizeIndexSegment(i)
+                    fc.SetPendingPathSegment(child, inheritedPending+thisSegment)
+                    fc.SetPendingPropertyName(child, strconv.Itoa(i)) // For @parentProperty (array index as string)
+                }
                 result = append(result, child)
             }
         }
         return result
     case segmentDotMemberName:
-        // Handle member access
         if value.Kind == yaml.MappingNode {
-            // In YAML mapping nodes, keys and values alternate
+            // Check for inherited pending segment from wildcard/slice
+            var inheritedPending string
+            if fc, ok := idx.(FilterContext); ok {
+                inheritedPending = fc.GetAndClearPendingPathSegment(value)
+            }
 
             for i := 0; i < len(value.Content); i += 2 {
                 key := value.Content[i]
@@ -126,6 +308,20 @@ func (s innerSegment) Query(idx index, value *yaml.Node, root *yaml.Node) []*yam
                 if key.Value == s.dotName {
                     idx.setPropertyKey(key, value)
                     idx.setPropertyKey(val, key)
+                    if trackParents {
+                        idx.setParentNode(val, value)
+                    }
+                    if fc, ok := idx.(FilterContext); ok {
+                        thisSegment := normalizePathSegment(key.Value)
+                        if inheritedPending != "" {
+                            // Propagate combined pending to result for later consumption
+                            fc.SetPendingPathSegment(val, inheritedPending+thisSegment)
+                        } else {
+                            // No wildcard ancestry - push directly to path
+                            fc.PushPathSegment(thisSegment)
+                        }
+                        fc.SetPropertyName(key.Value)
+                    }
                     result = append(result, val)
                     break
                 }
@@ -133,7 +329,6 @@ func (s innerSegment) Query(idx index, value *yaml.Node, root *yaml.Node) []*yam
         }
 
     case segmentLongHand:
-        // Handle long hand selectors
         for _, selector := range s.selectors {
             result = append(result, selector.Query(idx, value, root)...)
         }
@@ -146,12 +341,19 @@ func (s innerSegment) Query(idx index, value *yaml.Node, root *yaml.Node) []*yam
 }
 
 func (s selector) Query(idx index, value *yaml.Node, root *yaml.Node) []*yaml.Node {
+    trackParents := parentTrackingEnabled(idx)
+
     switch s.kind {
     case selectorSubKindName:
         if value.Kind != yaml.MappingNode {
             return nil
         }
-        // MappingNode children is a list of alternating keys and values
+        // Check for inherited pending segment from wildcard/slice
+        var inheritedPending string
+        if fc, ok := idx.(FilterContext); ok {
+            inheritedPending = fc.GetAndClearPendingPathSegment(value)
+        }
+
         var key string
         for i, child := range value.Content {
             if i%2 == 0 {
@@ -161,6 +363,20 @@ func (s selector) Query(idx index, value *yaml.Node, root *yaml.Node) []*yaml.No
             if key == s.name && i%2 == 1 {
                 idx.setPropertyKey(value.Content[i], value.Content[i-1])
                 idx.setPropertyKey(value.Content[i-1], value)
+                if trackParents {
+                    idx.setParentNode(child, value)
+                }
+                if fc, ok := idx.(FilterContext); ok {
+                    thisSegment := normalizePathSegment(key)
+                    if inheritedPending != "" {
+                        // Propagate combined pending to result for later consumption
+                        fc.SetPendingPathSegment(child, inheritedPending+thisSegment)
+                    } else {
+                        // No wildcard ancestry - push directly to path
+                        fc.PushPathSegment(thisSegment)
+                    }
+                    fc.SetPropertyName(key)
+                }
                 return []*yaml.Node{child}
             }
         }
@@ -168,24 +384,74 @@ func (s selector) Query(idx index, value *yaml.Node, root *yaml.Node) []*yaml.No
         if value.Kind != yaml.SequenceNode {
             return nil
         }
-        // if out of bounds, return nothing
         if s.index >= int64(len(value.Content)) || s.index < -int64(len(value.Content)) {
             return nil
         }
-        // if index is negative, go backwards
-        if s.index < 0 {
-            return []*yaml.Node{value.Content[int64(len(value.Content))+s.index]}
+        // Check for inherited pending segment from wildcard/slice
+        var inheritedPending string
+        if fc, ok := idx.(FilterContext); ok {
+            inheritedPending = fc.GetAndClearPendingPathSegment(value)
         }
-        return []*yaml.Node{value.Content[s.index]}
+
+        var child *yaml.Node
+        var actualIndex int
+        if s.index < 0 {
+            actualIndex = int(int64(len(value.Content)) + s.index)
+            child = value.Content[actualIndex]
+        } else {
+            actualIndex = int(s.index)
+            child = value.Content[s.index]
+        }
+        if trackParents {
+            idx.setParentNode(child, value)
+        }
+        if fc, ok := idx.(FilterContext); ok {
+            thisSegment := normalizeIndexSegment(actualIndex)
+            if inheritedPending != "" {
+                // Propagate combined pending to result for later consumption
+                fc.SetPendingPathSegment(child, inheritedPending+thisSegment)
+            } else {
+                // No wildcard ancestry - push directly to path
+                fc.PushPathSegment(thisSegment)
+            }
+        }
+        return []*yaml.Node{child}
     case selectorSubKindWildcard:
+        // Check for inherited pending segment from previous wildcard/slice
+        var inheritedPending string
+        if fc, ok := idx.(FilterContext); ok {
+            inheritedPending = fc.GetAndClearPendingPathSegment(value)
+        }
+
         if value.Kind == yaml.SequenceNode {
+            for i, child := range value.Content {
+                if trackParents {
+                    idx.setParentNode(child, value)
+                }
+                // Track pending path segment and property name for this node
+                if fc, ok := idx.(FilterContext); ok {
+                    thisSegment := normalizeIndexSegment(i)
+                    fc.SetPendingPathSegment(child, inheritedPending+thisSegment)
+                    fc.SetPendingPropertyName(child, strconv.Itoa(i)) // For @parentProperty
+                }
+            }
             return value.Content
         } else if value.Kind == yaml.MappingNode {
             var result []*yaml.Node
             for i, child := range value.Content {
                 if i%2 == 1 {
-                    idx.setPropertyKey(value.Content[i-1], value)
-                    idx.setPropertyKey(child, value.Content[i-1])
+                    keyNode := value.Content[i-1]
+                    idx.setPropertyKey(keyNode, value)
+                    idx.setPropertyKey(child, keyNode)
+                    if trackParents {
+                        idx.setParentNode(child, value)
+                    }
+                    // Track pending path segment and property name for this node
+                    if fc, ok := idx.(FilterContext); ok {
+                        thisSegment := normalizePathSegment(keyNode.Value)
+                        fc.SetPendingPathSegment(child, inheritedPending+thisSegment)
+                        fc.SetPendingPropertyName(child, keyNode.Value) // For @parentProperty
+                    }
                     result = append(result, child)
                 }
             }
@@ -199,6 +465,12 @@ func (s selector) Query(idx index, value *yaml.Node, root *yaml.Node) []*yaml.No
         if len(value.Content) == 0 {
             return nil
         }
+        // Check for inherited pending segment from previous wildcard/slice
+        var inheritedPending string
+        if fc, ok := idx.(FilterContext); ok {
+            inheritedPending = fc.GetAndClearPendingPathSegment(value)
+        }
+
         step := int64(1)
         if s.slice.step != nil {
             step = *s.slice.step
@@ -213,31 +485,108 @@ func (s selector) Query(idx index, value *yaml.Node, root *yaml.Node) []*yaml.No
         var result []*yaml.Node
         if step > 0 {
             for i := lower; i < upper; i += step {
-                result = append(result, value.Content[i])
+                child := value.Content[i]
+                if trackParents {
+                    idx.setParentNode(child, value)
+                }
+                // Track pending path segment and property name for this node
+                if fc, ok := idx.(FilterContext); ok {
+                    thisSegment := normalizeIndexSegment(int(i))
+                    fc.SetPendingPathSegment(child, inheritedPending+thisSegment)
+                    fc.SetPendingPropertyName(child, strconv.Itoa(int(i))) // For @parentProperty
+                }
+                result = append(result, child)
             }
         } else {
             for i := upper; i > lower; i += step {
-                result = append(result, value.Content[i])
+                child := value.Content[i]
+                if trackParents {
+                    idx.setParentNode(child, value)
+                }
+                // Track pending path segment and property name for this node
+                if fc, ok := idx.(FilterContext); ok {
+                    thisSegment := normalizeIndexSegment(int(i))
+                    fc.SetPendingPathSegment(child, inheritedPending+thisSegment)
+                    fc.SetPendingPropertyName(child, strconv.Itoa(int(i))) // For @parentProperty
+                }
+                result = append(result, child)
             }
         }
 
         return result
     case selectorSubKindFilter:
         var result []*yaml.Node
+        // Get parent property name - prefer pending property name from wildcard/slice,
+        // fall back to current PropertyName
+        var parentPropName string
+        var pushedPendingSegment bool
+        if fc, ok := idx.(FilterContext); ok {
+            // First check for pending property name from wildcard/slice
+            if pendingPropName := fc.GetAndClearPendingPropertyName(value); pendingPropName != "" {
+                parentPropName = pendingPropName
+            } else {
+                parentPropName = fc.PropertyName()
+            }
+            // Check if this node has a pending path segment from a wildcard/slice
+            if pendingSeg := fc.GetAndClearPendingPathSegment(value); pendingSeg != "" {
+                fc.PushPathSegment(pendingSeg)
+                pushedPendingSegment = true
+            }
+        }
         switch value.Kind {
         case yaml.MappingNode:
             for i := 1; i < len(value.Content); i += 2 {
-                idx.setPropertyKey(value.Content[i-1], value)
-                idx.setPropertyKey(value.Content[i], value.Content[i-1])
-                if s.filter.Matches(idx, value.Content[i], root) {
-                    result = append(result, value.Content[i])
+                keyNode := value.Content[i-1]
+                valueNode := value.Content[i]
+                idx.setPropertyKey(keyNode, value)
+                idx.setPropertyKey(valueNode, keyNode)
+                if trackParents {
+                    idx.setParentNode(valueNode, value)
+                }
+
+                if fc, ok := idx.(FilterContext); ok {
+                    fc.SetParentPropertyName(parentPropName)
+                    fc.SetPropertyName(keyNode.Value)
+                    fc.SetParent(value)
+                    fc.SetIndex(-1)
+                    fc.PushPathSegment(normalizePathSegment(keyNode.Value))
+                }
+
+                if s.filter.Matches(idx, valueNode, root) {
+                    result = append(result, valueNode)
+                }
+
+                if fc, ok := idx.(FilterContext); ok {
+                    fc.PopPathSegment()
                 }
             }
         case yaml.SequenceNode:
-            for _, child := range value.Content {
+            for i, child := range value.Content {
+                if trackParents {
+                    idx.setParentNode(child, value)
+                }
+
+                if fc, ok := idx.(FilterContext); ok {
+                    fc.SetParentPropertyName(parentPropName)
+                    fc.SetPropertyName(strconv.Itoa(i))
+                    fc.SetParent(value)
+                    fc.SetIndex(i)
+                    fc.PushPathSegment(normalizeIndexSegment(i))
+                }
+
                 if s.filter.Matches(idx, child, root) {
                     result = append(result, child)
                 }
+
+                if fc, ok := idx.(FilterContext); ok {
+                    fc.PopPathSegment()
+                }
+            }
+        }
+        // Pop the pending segment if we pushed one
+        if pushedPendingSegment {
+            if fc, ok := idx.(FilterContext); ok {
+                fc.PopPathSegment()
             }
         }
         return result
