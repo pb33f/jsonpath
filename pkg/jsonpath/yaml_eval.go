@@ -2,11 +2,18 @@ package jsonpath
 
 import (
     "fmt"
-    "go.yaml.in/yaml/v4"
     "reflect"
     "regexp"
     "strconv"
     "unicode/utf8"
+
+    "go.yaml.in/yaml/v4"
+)
+
+// Pre-allocated boolean literals to avoid repeated allocations
+var (
+    trueLit  = true
+    falseLit = false
 )
 
 func (l literal) Equals(value literal) bool {
@@ -114,7 +121,52 @@ func (c comparable) Evaluate(idx index, node *yaml.Node, root *yaml.Node) litera
     if c.functionExpr != nil {
         return c.functionExpr.Evaluate(idx, node, root)
     }
+    if c.contextVar != nil {
+        return c.contextVar.Evaluate(idx, node, root)
+    }
     return literal{}
+}
+
+// Evaluate returns the value of a context variable from the FilterContext.
+// Returns an empty literal if the idx is not a FilterContext.
+func (cv contextVariable) Evaluate(idx index, node *yaml.Node, root *yaml.Node) literal {
+    fc, ok := idx.(FilterContext)
+    if !ok {
+        // Not in JSONPath Plus mode or no context available
+        return literal{}
+    }
+
+    switch cv.kind {
+    case contextVarProperty:
+        propName := fc.PropertyName()
+        return literal{string: &propName}
+    case contextVarRoot:
+        // This case is handled in the parser - @root becomes an absQuery
+        // But if we get here, return the root node
+        return nodeToLiteral(fc.Root())
+    case contextVarParent:
+        parent := fc.Parent()
+        if parent != nil {
+            return nodeToLiteral(parent)
+        }
+        return literal{}
+    case contextVarParentProperty:
+        parentProp := fc.ParentPropertyName()
+        return literal{string: &parentProp}
+    case contextVarPath:
+        path := fc.Path()
+        return literal{string: &path}
+    case contextVarIndex:
+        idx := fc.Index()
+        if idx >= 0 {
+            return literal{integer: &idx}
+        }
+        // Not in array context - return -1 as indication
+        minusOne := -1
+        return literal{integer: &minusOne}
+    default:
+        return literal{}
+    }
 }
 
 func (e functionExpr) length(idx index, node *yaml.Node, root *yaml.Node) literal {
@@ -246,6 +298,21 @@ func (e functionExpr) Evaluate(idx index, node *yaml.Node, root *yaml.Node) lite
         return e.search(idx, node, root)
     case functionTypeValue:
         return e.value(idx, node, root)
+    // JSONPath Plus type selector functions
+    case functionTypeIsNull:
+        return e.isNull(idx, node, root)
+    case functionTypeIsBoolean:
+        return e.isBoolean(idx, node, root)
+    case functionTypeIsNumber:
+        return e.isNumber(idx, node, root)
+    case functionTypeIsString:
+        return e.isString(idx, node, root)
+    case functionTypeIsArray:
+        return e.isArray(idx, node, root)
+    case functionTypeIsObject:
+        return e.isObject(idx, node, root)
+    case functionTypeIsInteger:
+        return e.isInteger(idx, node, root)
     }
     return literal{}
 }
@@ -275,4 +342,100 @@ func (q absQuery) Evaluate(idx index, node *yaml.Node, root *yaml.Node) literal 
         return nodeToLiteral(result[0])
     }
     return literal{}
+}
+
+// Type checker functions for JSONPath Plus type selectors
+
+func isNullLiteral(lit *literal) bool {
+    if lit == nil {
+        return false
+    }
+    return (lit.null != nil && *lit.null) || (lit.node != nil && lit.node.Tag == "!!null")
+}
+
+func isBoolLiteral(lit *literal) bool {
+    if lit == nil {
+        return false
+    }
+    return lit.bool != nil || (lit.node != nil && lit.node.Tag == "!!bool")
+}
+
+func isNumberLiteral(lit *literal) bool {
+    if lit == nil {
+        return false
+    }
+    return lit.integer != nil || lit.float64 != nil ||
+        (lit.node != nil && (lit.node.Tag == "!!int" || lit.node.Tag == "!!float"))
+}
+
+func isStringLiteral(lit *literal) bool {
+    if lit == nil {
+        return false
+    }
+    return lit.string != nil || (lit.node != nil && lit.node.Tag == "!!str")
+}
+
+func isArrayLiteral(lit *literal) bool {
+    return lit != nil && lit.node != nil && lit.node.Kind == yaml.SequenceNode
+}
+
+func isObjectLiteral(lit *literal) bool {
+    return lit != nil && lit.node != nil && lit.node.Kind == yaml.MappingNode
+}
+
+func isIntegerLiteral(lit *literal) bool {
+    if lit == nil {
+        return false
+    }
+    return lit.integer != nil || (lit.node != nil && lit.node.Tag == "!!int")
+}
+
+// checkType is the generic type checker for all type selector functions
+func (e functionExpr) checkType(idx index, node *yaml.Node, root *yaml.Node, checker func(*literal) bool) literal {
+    args := e.args[0].Eval(idx, node, root)
+
+    if args.kind == functionArgTypeLiteral {
+        result := checker(args.literal)
+        return literal{bool: &result}
+    }
+
+    if args.kind == functionArgTypeNodes {
+        for _, lit := range args.nodes {
+            if !checker(lit) {
+                return literal{bool: &falseLit}
+            }
+        }
+        result := len(args.nodes) > 0
+        return literal{bool: &result}
+    }
+
+    return literal{bool: &falseLit}
+}
+
+func (e functionExpr) isNull(idx index, node *yaml.Node, root *yaml.Node) literal {
+    return e.checkType(idx, node, root, isNullLiteral)
+}
+
+func (e functionExpr) isBoolean(idx index, node *yaml.Node, root *yaml.Node) literal {
+    return e.checkType(idx, node, root, isBoolLiteral)
+}
+
+func (e functionExpr) isNumber(idx index, node *yaml.Node, root *yaml.Node) literal {
+    return e.checkType(idx, node, root, isNumberLiteral)
+}
+
+func (e functionExpr) isString(idx index, node *yaml.Node, root *yaml.Node) literal {
+    return e.checkType(idx, node, root, isStringLiteral)
+}
+
+func (e functionExpr) isArray(idx index, node *yaml.Node, root *yaml.Node) literal {
+    return e.checkType(idx, node, root, isArrayLiteral)
+}
+
+func (e functionExpr) isObject(idx index, node *yaml.Node, root *yaml.Node) literal {
+    return e.checkType(idx, node, root, isObjectLiteral)
+}
+
+func (e functionExpr) isInteger(idx index, node *yaml.Node, root *yaml.Node) literal {
+    return e.checkType(idx, node, root, isIntegerLiteral)
 }

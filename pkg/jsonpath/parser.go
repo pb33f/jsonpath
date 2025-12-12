@@ -18,6 +18,16 @@ const (
     modeSingular
 )
 
+// contextVarTokenMap maps context variable tokens to their kinds
+// CONTEXT_ROOT is handled separately as it requires path parsing
+var contextVarTokenMap = map[token.Token]contextVarKind{
+    token.CONTEXT_PROPERTY:        contextVarProperty,
+    token.CONTEXT_PARENT:          contextVarParent,
+    token.CONTEXT_PARENT_PROPERTY: contextVarParentProperty,
+    token.CONTEXT_PATH:            contextVarPath,
+    token.CONTEXT_INDEX:           contextVarIndex,
+}
+
 // JSONPath represents a JSONPath parser.
 type JSONPath struct {
     tokenizer *token.Tokenizer
@@ -108,6 +118,10 @@ func (p *JSONPath) parseSegment() (*segment, error) {
     } else if p.config.PropertyNameEnabled() && currentToken.Token == token.PROPERTY_NAME {
         p.current++
         return &segment{kind: segmentKindProperyName}, nil
+    } else if p.config.JSONPathPlusEnabled() && currentToken.Token == token.PARENT_SELECTOR {
+        // JSONPath Plus parent selector: ^ returns parent of current node
+        p.current++
+        return &segment{kind: segmentKindParent}, nil
     }
     return nil, p.parseFailure(&currentToken, "unexpected token when parsing segment")
 }
@@ -459,6 +473,7 @@ func (p *JSONPath) parseComparable() (*comparable, error) {
     //	comparable = literal /
     //	singular-query / ; singular query value
     //	function-expr    ; ValueType
+    //	context-variable ; JSONPath Plus extension
     if literal, err := p.parseLiteral(); err == nil {
         return &comparable{literal: literal}, nil
     }
@@ -485,7 +500,22 @@ func (p *JSONPath) parseComparable() (*comparable, error) {
             return nil, err
         }
         return &comparable{singularQuery: &singularQuery{relQuery: &relQuery{segments: query.segments}}}, nil
+
+    case token.CONTEXT_ROOT:
+        // @root followed by a path - parse as a query starting from root
+        p.current++
+        query, err := p.parseSingleQuery()
+        if err != nil {
+            return nil, err
+        }
+        return &comparable{singularQuery: &singularQuery{absQuery: &absQuery{segments: query.segments}}}, nil
+
     default:
+        // Check for JSONPath Plus context variables
+        if varKind, ok := contextVarTokenMap[p.tokens[p.current].Token]; ok {
+            p.current++
+            return &comparable{contextVar: &contextVariable{kind: varKind}}, nil
+        }
         return nil, p.parseFailure(&p.tokens[p.current], "expected literal or query")
     }
 }
@@ -561,6 +591,22 @@ func (p *JSONPath) parseFunctionExpr() (*functionExpr, error) {
     }
     p.current += 2
     args := []*functionArgument{}
+
+    // Check type selector functions first (JSONPath Plus)
+    // These take a single argument and return boolean
+    if funcType, ok := typeSelectorFunctionMap[functionName]; ok {
+        arg, err := p.parseFunctionArgument(false)
+        if err != nil {
+            return nil, err
+        }
+        args = append(args, arg)
+        if p.tokens[p.current].Token != token.PAREN_RIGHT {
+            return nil, p.parseFailure(&p.tokens[p.current], "expected ')'")
+        }
+        p.current++
+        return &functionExpr{funcType: funcType, args: args}, nil
+    }
+
     switch functionTypeMap[functionName] {
     case functionTypeLength:
         arg, err := p.parseFunctionArgument(true)
@@ -600,6 +646,8 @@ func (p *JSONPath) parseFunctionExpr() (*functionExpr, error) {
             return nil, err
         }
         args = append(args, arg)
+    default:
+        return nil, p.parseFailure(&p.tokens[p.current], "unknown function: "+functionName)
     }
     if p.tokens[p.current].Token != token.PAREN_RIGHT {
         return nil, p.parseFailure(&p.tokens[p.current], "expected ')'")
@@ -666,6 +714,13 @@ func (p *JSONPath) parseFunctionArgument(single bool) (*functionArgument, error)
         }
         return &functionArgument{filterQuery: &filterQuery{jsonPathQuery: &jsonPathAST{segments: query.segments}}}, nil
     }
+
+    // Check for JSONPath Plus context variables as function arguments
+    if varKind, ok := contextVarTokenMap[p.tokens[p.current].Token]; ok {
+        p.current++
+        return &functionArgument{contextVar: &contextVariable{kind: varKind}}, nil
+    }
+
     if expr, err := p.parseLogicalOrExpr(); err == nil {
         return &functionArgument{logicalExpr: expr}, nil
     }

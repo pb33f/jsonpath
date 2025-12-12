@@ -88,6 +88,7 @@ type functionArgument struct {
     filterQuery  *filterQuery
     logicalExpr  *logicalOrExpr
     functionExpr *functionExpr
+    contextVar   *contextVariable // JSONPath Plus context variables
 }
 
 type functionArgType int
@@ -124,6 +125,10 @@ func (a functionArgument) Eval(idx index, node *yaml.Node, root *yaml.Node) reso
     } else if a.functionExpr != nil {
         res := a.functionExpr.Evaluate(idx, node, root)
         return resolvedArgument{kind: functionArgTypeLiteral, literal: &res}
+    } else if a.contextVar != nil {
+        // Evaluate context variable and return as literal
+        res := a.contextVar.Evaluate(idx, node, root)
+        return resolvedArgument{kind: functionArgTypeLiteral, literal: &res}
     }
     return resolvedArgument{}
 }
@@ -138,6 +143,8 @@ func (a functionArgument) ToString() string {
         builder.WriteString(a.logicalExpr.ToString())
     } else if a.functionExpr != nil {
         builder.WriteString(a.functionExpr.ToString())
+    } else if a.contextVar != nil {
+        builder.WriteString(a.contextVar.ToString())
     }
     return builder.String()
 }
@@ -156,6 +163,14 @@ const (
     functionTypeMatch
     functionTypeSearch
     functionTypeValue
+    // JSONPath Plus type selector functions
+    functionTypeIsNull
+    functionTypeIsBoolean
+    functionTypeIsNumber
+    functionTypeIsString
+    functionTypeIsArray
+    functionTypeIsObject
+    functionTypeIsInteger
 )
 
 var functionTypeMap = map[string]functionType{
@@ -166,8 +181,25 @@ var functionTypeMap = map[string]functionType{
     "value":  functionTypeValue,
 }
 
+// typeSelectorFunctionMap maps JSONPath Plus type selector function names to their types.
+// These are extensions enabled when JSONPath Plus mode is active.
+var typeSelectorFunctionMap = map[string]functionType{
+    "isNull":    functionTypeIsNull,
+    "isBoolean": functionTypeIsBoolean,
+    "isNumber":  functionTypeIsNumber,
+    "isString":  functionTypeIsString,
+    "isArray":   functionTypeIsArray,
+    "isObject":  functionTypeIsObject,
+    "isInteger": functionTypeIsInteger,
+}
+
 func (f functionType) String() string {
     for k, v := range functionTypeMap {
+        if v == f {
+            return k
+        }
+    }
+    for k, v := range typeSelectorFunctionMap {
         if v == f {
             return k
         }
@@ -350,15 +382,54 @@ func (q singularQuery) ToString() string {
     return ""
 }
 
+// contextVarKind represents the type of context variable
+type contextVarKind int
+
+const (
+    contextVarProperty       contextVarKind = iota // @property - current property name
+    contextVarRoot                                 // @root - root node access
+    contextVarParent                               // @parent - parent node
+    contextVarParentProperty                       // @parentProperty - parent's property name
+    contextVarPath                                 // @path - absolute path to current node
+    contextVarIndex                                // @index - current array index
+)
+
+// contextVariable represents a JSONPath Plus context variable in filter expressions.
+// These provide access to metadata about the current node being evaluated.
+type contextVariable struct {
+    kind contextVarKind
+}
+
+func (cv contextVariable) ToString() string {
+    switch cv.kind {
+    case contextVarProperty:
+        return "@property"
+    case contextVarRoot:
+        return "@root"
+    case contextVarParent:
+        return "@parent"
+    case contextVarParentProperty:
+        return "@parentProperty"
+    case contextVarPath:
+        return "@path"
+    case contextVarIndex:
+        return "@index"
+    default:
+        return "@unknown"
+    }
+}
+
 // comparable
 //
 //	comparable = literal /
 //	singular-query / ; singular query value
 //	function-expr    ; ValueType
+//	context-variable ; JSONPath Plus extension
 type comparable struct {
     literal       *literal
     singularQuery *singularQuery
     functionExpr  *functionExpr
+    contextVar    *contextVariable // JSONPath Plus extension
 }
 
 func (c comparable) ToString() string {
@@ -368,6 +439,8 @@ func (c comparable) ToString() string {
         return c.singularQuery.ToString()
     } else if c.functionExpr != nil {
         return c.functionExpr.ToString()
+    } else if c.contextVar != nil {
+        return c.contextVar.ToString()
     }
     return ""
 }

@@ -195,6 +195,17 @@ const (
     LE
     MATCHES
     FUNCTION
+
+    // JSONPath Plus context variable tokens
+    CONTEXT_PROPERTY        // @property - current property name
+    CONTEXT_ROOT            // @root - root node access in filter
+    CONTEXT_PARENT          // @parent - parent node reference
+    CONTEXT_PARENT_PROPERTY // @parentProperty - parent's property name
+    CONTEXT_PATH            // @path - absolute path to current node
+    CONTEXT_INDEX           // @index - current array index
+
+    // JSONPath Plus parent selector
+    PARENT_SELECTOR // ^ - select parent of current node
 )
 
 var SimpleTokens = [...]Token{
@@ -247,6 +258,17 @@ var tokens = [...]string{
     LE:            "<=",
     MATCHES:       "=~",
     FUNCTION:      "FUNCTION",
+
+    // JSONPath Plus context variables
+    CONTEXT_PROPERTY:        "@property",
+    CONTEXT_ROOT:            "@root",
+    CONTEXT_PARENT:          "@parent",
+    CONTEXT_PARENT_PROPERTY: "@parentProperty",
+    CONTEXT_PATH:            "@path",
+    CONTEXT_INDEX:           "@index",
+
+    // JSONPath Plus parent selector
+    PARENT_SELECTOR: "^",
 }
 
 // String returns the string representation of the token.
@@ -421,7 +443,20 @@ func (t *Tokenizer) Tokenize() Tokens {
         case ch == '$':
             t.addToken(ROOT, 1, "")
         case ch == '@':
-            t.addToken(CURRENT, 1, "")
+            // Check for JSONPath Plus context variables when enabled
+            handled := false
+            if t.config.JSONPathPlusEnabled() {
+                if contextToken, length := t.tryContextVariable(); contextToken != ILLEGAL {
+                    t.addToken(contextToken, length, "")
+                    // Advance past the token (minus 1 because main loop does pos++)
+                    t.pos += length - 1
+                    t.column += length - 1
+                    handled = true
+                }
+            }
+            if !handled {
+                t.addToken(CURRENT, 1, "")
+            }
         case ch == '*':
             t.addToken(WILDCARD, 1, "")
         case ch == '~':
@@ -429,6 +464,13 @@ func (t *Tokenizer) Tokenize() Tokens {
                 t.addToken(PROPERTY_NAME, 1, "")
             } else {
                 t.addToken(ILLEGAL, 1, "invalid property name token without config.PropertyNameExtension set to true")
+            }
+        case ch == '^':
+            // JSONPath Plus parent selector
+            if t.config.JSONPathPlusEnabled() {
+                t.addToken(PARENT_SELECTOR, 1, "")
+            } else {
+                t.addToken(ILLEGAL, 1, "parent selector ^ requires JSONPath Plus mode (enabled by default, disabled with StrictRFC9535)")
             }
         case ch == '.':
             if t.peek() == '.' {
@@ -484,17 +526,31 @@ func (t *Tokenizer) Tokenize() Tokens {
             }
         case ch == '!':
             if t.peek() == '=' {
-                t.addToken(NE, 2, "")
-                t.pos++
-                t.column++
+                // Check for JavaScript !== (strict not-equals) - treat as RFC 9535 !=
+                if t.pos+2 < len(t.input) && t.input[t.pos+2] == '=' {
+                    t.addToken(NE, 3, "") // !== becomes !=
+                    t.pos += 2
+                    t.column += 2
+                } else {
+                    t.addToken(NE, 2, "")
+                    t.pos++
+                    t.column++
+                }
             } else {
                 t.addToken(NOT, 1, "")
             }
         case ch == '=':
             if t.peek() == '=' {
-                t.addToken(EQ, 2, "")
-                t.pos++
-                t.column++
+                // Check for JavaScript === (strict equals) - treat as RFC 9535 ==
+                if t.pos+2 < len(t.input) && t.input[t.pos+2] == '=' {
+                    t.addToken(EQ, 3, "") // === becomes ==
+                    t.pos += 2
+                    t.column += 2
+                } else {
+                    t.addToken(EQ, 2, "")
+                    t.pos++
+                    t.column++
+                }
             } else if t.peek() == '~' {
                 t.addToken(MATCHES, 2, "")
                 t.pos++
@@ -703,7 +759,9 @@ func (t *Tokenizer) scanLiteral() {
             case "null":
                 t.addToken(NULL, len(literal), literal)
             default:
-                if isFunctionName(literal) {
+                // Only treat as FUNCTION if it's a function name AND followed by '('
+                // Otherwise it's a property name (STRING)
+                if isFunctionName(literal) && i < len(t.input) && t.input[i] == '(' {
                     t.addToken(FUNCTION, len(literal), literal)
                     t.illegalWhitespace = true
                 } else {
@@ -731,7 +789,15 @@ func (t *Tokenizer) scanLiteral() {
 }
 
 func isFunctionName(literal string) bool {
-    return literal == "length" || literal == "count" || literal == "match" || literal == "search" || literal == "value"
+    switch literal {
+    // RFC 9535 standard functions
+    case "length", "count", "match", "search", "value":
+        return true
+    // JSONPath Plus type selector functions
+    case "isNull", "isBoolean", "isNumber", "isString", "isArray", "isObject", "isInteger":
+        return true
+    }
+    return false
 }
 
 func (t *Tokenizer) skipWhitespace() {
@@ -773,4 +839,49 @@ func isLiteralChar(ch byte) bool {
 
 func isSpace(ch byte) bool {
     return ch == ' ' || ch == '\t' || ch == '\r'
+}
+
+// contextVariableKeywords maps context variable names to their token types.
+// These are JSONPath Plus extensions for accessing filter context.
+var contextVariableKeywords = map[string]Token{
+    "property":       CONTEXT_PROPERTY,
+    "root":           CONTEXT_ROOT,
+    "parent":         CONTEXT_PARENT,
+    "parentProperty": CONTEXT_PARENT_PROPERTY,
+    "path":           CONTEXT_PATH,
+    "index":          CONTEXT_INDEX,
+}
+
+// tryContextVariable checks if the current position starts a context variable.
+// It returns the token type and total length (including @) if found, or ILLEGAL and 0 if not.
+// Context variables are @property, @root, @parent, @parentProperty, @path, @index.
+func (t *Tokenizer) tryContextVariable() (Token, int) {
+    // Must start with @
+    if t.pos >= len(t.input) || t.input[t.pos] != '@' {
+        return ILLEGAL, 0
+    }
+
+    // Extract the word following @
+    start := t.pos + 1
+    if start >= len(t.input) {
+        return ILLEGAL, 0
+    }
+
+    // Find the end of the identifier
+    end := start
+    for end < len(t.input) && isLiteralChar(t.input[end]) {
+        end++
+    }
+
+    if end == start {
+        return ILLEGAL, 0
+    }
+
+    keyword := t.input[start:end]
+    if tok, ok := contextVariableKeywords[keyword]; ok {
+        // Return the token and total length including @
+        return tok, end - t.pos
+    }
+
+    return ILLEGAL, 0
 }
