@@ -659,6 +659,60 @@ users:
 	assert.Len(t, results, 1, "should find 1 user with count < 100")
 }
 
+func TestLazyContextTrackingContextVariables(t *testing.T) {
+	yamlData := `
+store:
+  book:
+    - title: "Book 1"
+    - title: "Book 2"
+  bicycle:
+    details: { price: 20 }
+paths:
+  /users:
+    get: { summary: "Get users" }
+    post: { summary: "Create user" }
+  /orders:
+    get: { summary: "Get orders" }
+items:
+  - name: "First"
+  - name: "Second"
+  - name: "Third"
+`
+	var node yaml.Node
+	err := yaml.Unmarshal([]byte(yamlData), &node)
+	assert.NoError(t, err)
+
+	path, err := NewPath(`$.paths.*[?(@property == 'get')]`, config.WithLazyContextTracking())
+	assert.NoError(t, err)
+	results := path.Query(&node)
+	assert.Len(t, results, 2)
+
+	path, err = NewPath(`$.store.book[?(@path == "$['store']['book'][0]")]`, config.WithLazyContextTracking())
+	assert.NoError(t, err)
+	results = path.Query(&node)
+	assert.Len(t, results, 1)
+
+	path, err = NewPath(`$.items[?(@index == 1)]`, config.WithLazyContextTracking())
+	assert.NoError(t, err)
+	results = path.Query(&node)
+	if assert.Len(t, results, 1) {
+		assert.Equal(t, "Second", mappingValue(results[0], "name"))
+	}
+
+	path, err = NewPath(`$.items[?length(@parent) == 3]`, config.WithLazyContextTracking())
+	assert.NoError(t, err)
+	results = path.Query(&node)
+	assert.Len(t, results, 3)
+
+	path, err = NewPath(`$.store.*[?(@parentProperty == 'book')]`, config.WithLazyContextTracking())
+	assert.NoError(t, err)
+	results = path.Query(&node)
+	if assert.Len(t, results, 2) {
+		assert.Equal(t, "Book 1", mappingValue(results[0], "title"))
+		assert.Equal(t, "Book 2", mappingValue(results[1], "title"))
+	}
+}
+
 // TestParentSelector tests the ^ parent selector
 func TestParentSelector(t *testing.T) {
 	yamlData := `
@@ -1261,6 +1315,18 @@ store:
 			assert.Len(t, results, tt.expected, "expected %d results, got %d for path %s", tt.expected, len(results), tt.path)
 		})
 	}
+}
+
+func mappingValue(node *yaml.Node, key string) string {
+	if node == nil || node.Kind != yaml.MappingNode {
+		return ""
+	}
+	for i := 0; i < len(node.Content)-1; i += 2 {
+		if node.Content[i].Value == key {
+			return node.Content[i+1].Value
+		}
+	}
+	return ""
 }
 
 // Helper function to check if a YAML string contains expected content

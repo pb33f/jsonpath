@@ -1,6 +1,7 @@
 package jsonpath
 
 import (
+    "fmt"
     "github.com/pb33f/jsonpath/pkg/jsonpath/config"
     "github.com/pb33f/jsonpath/pkg/jsonpath/token"
     "go.yaml.in/yaml/v4"
@@ -285,4 +286,39 @@ paths:
             }
         })
     }
+}
+
+func BenchmarkDescendantQuery(b *testing.B) {
+    root := buildBenchmarkRoot(5, 6)
+    tokenizer := token.NewTokenizer("$..*")
+    parser := newParserPrivate(tokenizer, tokenizer.Tokenize())
+    if err := parser.parse(); err != nil {
+        b.Fatalf("Error parsing JSON Path: %v", err)
+    }
+
+    b.ReportAllocs()
+    b.ResetTimer()
+    for i := 0; i < b.N; i++ {
+        _ = parser.ast.Query(root, root)
+    }
+}
+
+func buildBenchmarkRoot(depth, breadth int) *yaml.Node {
+    doc := &yaml.Node{Kind: yaml.DocumentNode}
+    doc.Content = append(doc.Content, buildBenchmarkMapping(depth, breadth))
+    return doc
+}
+
+func buildBenchmarkMapping(depth, breadth int) *yaml.Node {
+    if depth == 0 {
+        return &yaml.Node{Kind: yaml.ScalarNode, Value: "leaf"}
+    }
+
+    node := &yaml.Node{Kind: yaml.MappingNode}
+    for i := 0; i < breadth; i++ {
+        key := &yaml.Node{Kind: yaml.ScalarNode, Value: fmt.Sprintf("k%d", i)}
+        value := buildBenchmarkMapping(depth-1, breadth)
+        node.Content = append(node.Content, key, value)
+    }
+    return node
 }

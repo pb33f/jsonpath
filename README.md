@@ -62,6 +62,7 @@ store:
 ### Context Variables
 
 Context variables provide information about the current evaluation context within filter expressions. They are prefixed with `@` and can be used in comparisons.
+By default, context tracking is eager to preserve historical behavior. If you want to reduce overhead for queries that do not use context variables, enable `config.WithLazyContextTracking()` to turn on tracking only when a query uses `@property`, `@path`, `@parentProperty`, or `@index`.
 
 #### `@property`
 

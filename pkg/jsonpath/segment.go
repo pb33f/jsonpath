@@ -77,10 +77,19 @@ func (s innerSegment) ToString() string {
     return builder.String()
 }
 
-func descend(value *yaml.Node, root *yaml.Node) []*yaml.Node {
-    result := []*yaml.Node{value}
-    for _, child := range value.Content {
-        result = append(result, descend(child, root)...)
+func descendApply(value *yaml.Node, apply func(*yaml.Node)) {
+    if value == nil {
+        return
     }
-    return result
+    stack := []*yaml.Node{value}
+    for len(stack) > 0 {
+        n := stack[len(stack)-1]
+        stack = stack[:len(stack)-1]
+        apply(n)
+        if len(n.Content) > 0 {
+            for i := len(n.Content) - 1; i >= 0; i-- {
+                stack = append(stack, n.Content[i])
+            }
+        }
+    }
 }
