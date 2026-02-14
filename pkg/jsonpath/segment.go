@@ -81,15 +81,8 @@ func descendApply(value *yaml.Node, apply func(*yaml.Node)) {
     if value == nil {
         return
     }
-    stack := []*yaml.Node{value}
-    for len(stack) > 0 {
-        n := stack[len(stack)-1]
-        stack = stack[:len(stack)-1]
-        apply(n)
-        if len(n.Content) > 0 {
-            for i := len(n.Content) - 1; i >= 0; i-- {
-                stack = append(stack, n.Content[i])
-            }
-        }
+    apply(value)
+    for _, child := range value.Content {
+        descendApply(child, apply)
     }
 }
