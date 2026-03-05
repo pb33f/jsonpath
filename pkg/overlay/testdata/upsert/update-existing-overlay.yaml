@@ -1,0 +1,8 @@
+overlay: "1.0.0"
+info:
+  title: test
+  version: "1.0"
+actions:
+  - target: $.spec.existing
+    update: updated
+    upsert: true

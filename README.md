@@ -280,6 +280,133 @@ $.person.*~
 
 ---
 
+## Overlay Support
+
+This library includes support for YAML overlays, which allow you to apply structured modifications to YAML documents using JSONPath expressions.
+
+### Basic Overlay Usage
+
+Overlays are defined in YAML format and specify actions to apply to a target document:
+
+```yaml
+overlay: "1.0.0"
+info:
+  title: My Overlay
+  version: "1.0"
+actions:
+  - target: $.spec.replicas
+    update: 3
+```
+
+```go
+package main
+
+import (
+    "fmt"
+    "github.com/pb33f/jsonpath/pkg/overlay"
+    "go.yaml.in/yaml/v4"
+)
+
+func main() {
+    // Parse the overlay
+    ov, _ := overlay.ParseOverlay(overlayYAML)
+    
+    // Apply to a document
+    result, _ := ov.Apply(documentNode)
+}
+```
+
+### Upsert Action
+
+The `upsert` action combines update and insert behavior. When `upsert: true` is set:
+
+- If the target path exists, the value is updated (same as `update`)
+- If the target path doesn't exist, the path is created and the value is set
+
+**Example: Create nested paths**
+
+```yaml
+# Input document
+spec:
+  existing: value
+
+# Overlay
+overlay: "1.0.0"
+actions:
+  - target: $.spec.config.nested.key
+    update: created
+    upsert: true
+
+# Result
+spec:
+  existing: value
+  config:
+    nested:
+      key: created
+```
+
+**Example: Update existing values**
+
+```yaml
+# Input document
+spec:
+  existing: value
+
+# Overlay
+overlay: "1.0.0"
+actions:
+  - target: $.spec.existing
+    update: updated
+    upsert: true
+
+# Result
+spec:
+  existing: updated
+```
+
+**Example: Array elements**
+
+```yaml
+# Input document
+items:
+  - name: first
+
+# Overlay
+overlay: "1.0.0"
+actions:
+  - target: $.items[0].name
+    update: updated
+    upsert: true
+
+# Result
+items:
+  - name: updated
+```
+
+### Supported Path Types for Upsert
+
+Upsert works with **singular paths** - paths that resolve to exactly one location:
+
+| Path Type | Example | Behavior |
+|-----------|---------|----------|
+| Member name | `$.foo.bar` | Creates nested maps as needed |
+| Array index | `$.items[0]` | Creates arrays and sets at index |
+| Combined | `$.a.b[2].c` | Creates nested structures |
+
+### Unsupported Path Types
+
+The following path types **cannot** be used with upsert (will return an error):
+
+| Path Type | Example | Reason |
+|-----------|---------|--------|
+| Wildcard | `$.*.foo` | Ambiguous - which child? |
+| Recursive descent | `$..foo` | Ambiguous location |
+| Filter | `$[?(@.x)]` | Query, not specific location |
+| Multiple selectors | `$['a','b']` | Multiple locations |
+| Slice | `$[0:5]` | Multiple locations |
+
+---
+
 ## Standard RFC 9535 Features
 
 This library fully implements RFC 9535, including:

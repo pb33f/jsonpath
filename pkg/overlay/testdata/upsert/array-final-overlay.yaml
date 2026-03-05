@@ -1,0 +1,8 @@
+overlay: "1.0.0"
+info:
+  title: test
+  version: "1.0"
+actions:
+  - target: $.items[0]
+    update: updated-first
+    upsert: true

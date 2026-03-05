@@ -1,0 +1,9 @@
+overlay: "1.0.0"
+info:
+  title: test
+  version: "1.0"
+actions:
+  - target: $.root.items
+    update:
+      - name: first-item
+    upsert: true

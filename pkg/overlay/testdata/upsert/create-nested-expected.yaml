@@ -1,0 +1,5 @@
+spec:
+  existing: value
+  config:
+    nested:
+      key: created

@@ -1,0 +1,4 @@
+items:
+  - first: value1
+  - second: updated-value
+    extra: new-field
