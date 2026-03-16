@@ -368,6 +368,67 @@ func TestTokenizer(t *testing.T) {
         //		{Token: BRACKET_RIGHT, Line: 1, Column: 18, literal: "", Len: 1},
         //	},
         //},
+        {
+            name:  "UnquotedBracketGet",
+            input: "$[get]",
+            expected: []TokenInfo{
+                {Token: ROOT, Line: 1, Column: 0, Literal: "", Len: 1},
+                {Token: BRACKET_LEFT, Line: 1, Column: 1, Literal: "", Len: 1},
+                {Token: STRING_LITERAL, Line: 1, Column: 2, Literal: "get", Len: 3},
+                {Token: BRACKET_RIGHT, Line: 1, Column: 5, Literal: "", Len: 1},
+            },
+        },
+        {
+            name:  "UnquotedBracketUnion",
+            input: "$.paths[*][get,post]",
+            expected: []TokenInfo{
+                {Token: ROOT, Line: 1, Column: 0, Literal: "", Len: 1},
+                {Token: CHILD, Line: 1, Column: 1, Literal: "", Len: 1},
+                {Token: STRING, Line: 1, Column: 2, Literal: "paths", Len: 5},
+                {Token: BRACKET_LEFT, Line: 1, Column: 7, Literal: "", Len: 1},
+                {Token: WILDCARD, Line: 1, Column: 8, Literal: "", Len: 1},
+                {Token: BRACKET_RIGHT, Line: 1, Column: 9, Literal: "", Len: 1},
+                {Token: BRACKET_LEFT, Line: 1, Column: 10, Literal: "", Len: 1},
+                {Token: STRING_LITERAL, Line: 1, Column: 11, Literal: "get", Len: 3},
+                {Token: COMMA, Line: 1, Column: 14, Literal: "", Len: 1},
+                {Token: STRING_LITERAL, Line: 1, Column: 15, Literal: "post", Len: 4},
+                {Token: BRACKET_RIGHT, Line: 1, Column: 19, Literal: "", Len: 1},
+            },
+        },
+        {
+            name:  "UnquotedBracketMediaType",
+            input: "$[application/vnd.api+json]",
+            expected: []TokenInfo{
+                {Token: ROOT, Line: 1, Column: 0, Literal: "", Len: 1},
+                {Token: BRACKET_LEFT, Line: 1, Column: 1, Literal: "", Len: 1},
+                {Token: STRING_LITERAL, Line: 1, Column: 2, Literal: "application/vnd.api+json", Len: 24},
+                {Token: BRACKET_RIGHT, Line: 1, Column: 26, Literal: "", Len: 1},
+            },
+        },
+        {
+            name:  "UnquotedBracketMixed",
+            input: "$[default,400,500]",
+            expected: []TokenInfo{
+                {Token: ROOT, Line: 1, Column: 0, Literal: "", Len: 1},
+                {Token: BRACKET_LEFT, Line: 1, Column: 1, Literal: "", Len: 1},
+                {Token: STRING_LITERAL, Line: 1, Column: 2, Literal: "default", Len: 7},
+                {Token: COMMA, Line: 1, Column: 9, Literal: "", Len: 1},
+                {Token: INTEGER, Line: 1, Column: 10, Literal: "400", Len: 3},
+                {Token: COMMA, Line: 1, Column: 13, Literal: "", Len: 1},
+                {Token: INTEGER, Line: 1, Column: 14, Literal: "500", Len: 3},
+                {Token: BRACKET_RIGHT, Line: 1, Column: 17, Literal: "", Len: 1},
+            },
+        },
+        {
+            name:  "ArrayIndexPreserved",
+            input: "$[0]",
+            expected: []TokenInfo{
+                {Token: ROOT, Line: 1, Column: 0, Literal: "", Len: 1},
+                {Token: BRACKET_LEFT, Line: 1, Column: 1, Literal: "", Len: 1},
+                {Token: INTEGER, Line: 1, Column: 2, Literal: "0", Len: 1},
+                {Token: BRACKET_RIGHT, Line: 1, Column: 3, Literal: "", Len: 1},
+            },
+        },
     }
 
     for _, test := range tests {
@@ -798,5 +859,20 @@ func TestPropertyNameExtension(t *testing.T) {
                 }
             }
         })
+    }
+}
+
+func TestUnquotedBracketStrictMode(t *testing.T) {
+    tok := NewTokenizer("$[get]", config.WithStrictRFC9535())
+    tokens := tok.Tokenize()
+    // In strict mode, 'get' inside brackets is scanned as a literal STRING, not STRING_LITERAL
+    found := false
+    for _, ti := range tokens {
+        if ti.Token == STRING && ti.Literal == "get" {
+            found = true
+        }
+    }
+    if !found {
+        t.Error("expected STRING token for 'get' in strict mode, got:", tokens)
     }
 }

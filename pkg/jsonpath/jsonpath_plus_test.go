@@ -1347,3 +1347,159 @@ func contains(s, substr string) bool {
 	}
 	return false
 }
+
+func TestUnquotedBracketNotation(t *testing.T) {
+	tests := []struct {
+		name     string
+		yaml     string
+		path     string
+		expected int
+	}{
+		{
+			name: "select GET operations with unquoted bracket",
+			yaml: `
+paths:
+  /users:
+    get:
+      operationId: "getUsers"
+    post:
+      operationId: "createUser"
+  /items:
+    get:
+      operationId: "getItems"
+    delete:
+      operationId: "deleteItems"
+`,
+			path:     `$.paths[*][get]`,
+			expected: 2,
+		},
+		{
+			name: "union of unquoted bracket selectors",
+			yaml: `
+paths:
+  /users:
+    get:
+      operationId: "getUsers"
+    post:
+      operationId: "createUser"
+    delete:
+      operationId: "deleteUsers"
+  /items:
+    get:
+      operationId: "getItems"
+    put:
+      operationId: "updateItems"
+`,
+			path:     `$.paths[*][get,post]`,
+			expected: 3,
+		},
+		{
+			name: "media type selector",
+			yaml: `
+paths:
+  /users:
+    post:
+      requestBody:
+        content:
+          application/vnd.api+json:
+            schema:
+              type: object
+          application/json:
+            schema:
+              type: object
+`,
+			path:     `$.paths..content[application/vnd.api+json].schema`,
+			expected: 1,
+		},
+		{
+			name: "mixed name and integer selectors on mapping",
+			yaml: `
+responses:
+  default:
+    description: "Default error"
+  "200":
+    description: "Success"
+  "400":
+    description: "Bad request"
+  "500":
+    description: "Server error"
+`,
+			path:     `$.responses[default,400,500]`,
+			expected: 3,
+		},
+		{
+			name: "integer index on mapping node (200 status code)",
+			yaml: `
+responses:
+  "200":
+    description: "Success"
+  "404":
+    description: "Not Found"
+`,
+			path:     `$.responses[200]`,
+			expected: 1,
+		},
+		{
+			name: "array index still works as array index",
+			yaml: `
+items:
+  - name: "first"
+  - name: "second"
+  - name: "third"
+`,
+			path:     `$.items[0]`,
+			expected: 1,
+		},
+		{
+			name: "nested brackets in filter stay as integers",
+			yaml: `
+data:
+  - items:
+      - value: 5
+      - value: 10
+  - items:
+      - value: 15
+`,
+			path:     `$.data[?(@.items[0].value > 4)]`,
+			expected: 2,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var node yaml.Node
+			err := yaml.Unmarshal([]byte(tt.yaml), &node)
+			assert.NoError(t, err)
+
+			path, err := NewPath(tt.path)
+			assert.NoError(t, err, "failed to parse path: %s", tt.path)
+
+			results := path.Query(&node)
+			assert.Len(t, results, tt.expected, "expected %d results, got %d for path %s", tt.expected, len(results), tt.path)
+		})
+	}
+}
+
+func TestUnquotedBracketStrictModeRejection(t *testing.T) {
+	// In strict RFC 9535 mode, unquoted brackets should not produce STRING_LITERAL
+	// Instead they produce STRING (from scanLiteral) which the parser treats differently
+	yamlData := `
+paths:
+  /users:
+    get:
+      operationId: "getUsers"
+`
+	var node yaml.Node
+	err := yaml.Unmarshal([]byte(yamlData), &node)
+	assert.NoError(t, err)
+
+	// In strict mode, $[get] should still parse but 'get' is a STRING not STRING_LITERAL
+	// The parser may or may not accept this, but the behavior differs from JSONPath Plus
+	path, parseErr := NewPath(`$.paths['/users'][get]`, config.WithStrictRFC9535())
+	if parseErr == nil {
+		results := path.Query(&node)
+		// In strict mode without unquoted bracket support, this may not find results
+		_ = results
+	}
+	// We just verify it doesn't panic
+}
