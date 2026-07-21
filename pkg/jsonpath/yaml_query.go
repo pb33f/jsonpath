@@ -151,13 +151,16 @@ func (s *innerSegment) hasParentReferences() bool {
 }
 
 func (s *selector) hasParentReferences() bool {
-	if s.filter != nil && s.filter.hasParentReferences() {
+	if s.filter.present() && s.filter.hasParentReferences() {
 		return true
 	}
 	return false
 }
 
 func (f *filterSelector) hasParentReferences() bool {
+	if f.spectralExpression != nil {
+		return f.spectralExpression.usage.parent
+	}
 	if f.expression != nil {
 		return f.expression.hasParentReferences()
 	}
@@ -276,6 +279,8 @@ func (s segment) Query(idx index, value *yaml.Node, root *yaml.Node) []*yaml.Nod
 			return []*yaml.Node{found}
 		}
 		return []*yaml.Node{}
+	case segmentKindRecursivePropertyName:
+		return recursivePropertyNames(idx, value)
 	case segmentKindParent:
 		parent := idx.getParentNode(value)
 		if parent != nil {
@@ -284,6 +289,35 @@ func (s segment) Query(idx index, value *yaml.Node, root *yaml.Node) []*yaml.Nod
 		return []*yaml.Node{}
 	}
 	panic("no segment type")
+}
+
+func recursivePropertyNames(idx index, value *yaml.Node) []*yaml.Node {
+	var result []*yaml.Node
+	if current := idx.getPropertyKey(value); current != nil {
+		result = append(result, current)
+	}
+	var walk func(*yaml.Node)
+	walk = func(node *yaml.Node) {
+		if node == nil {
+			return
+		}
+		switch node.Kind {
+		case yaml.MappingNode:
+			for i := 0; i+1 < len(node.Content); i += 2 {
+				key, child := node.Content[i], node.Content[i+1]
+				idx.setPropertyKey(key, node)
+				idx.setPropertyKey(child, key)
+				result = append(result, key)
+				walk(child)
+			}
+		case yaml.SequenceNode:
+			for _, child := range node.Content {
+				walk(child)
+			}
+		}
+	}
+	walk(value)
+	return result
 }
 
 func unique(nodes []*yaml.Node) []*yaml.Node {
@@ -433,6 +467,9 @@ func (s selector) Query(idx index, value *yaml.Node, root *yaml.Node) []*yaml.No
 					if trackParents {
 						idx.setParentNode(child, value)
 					}
+					if hasFc && s.spectral {
+						fc.SetPropertyName(keyStr)
+					}
 					return []*yaml.Node{child}
 				}
 			}
@@ -467,6 +504,9 @@ func (s selector) Query(idx index, value *yaml.Node, root *yaml.Node) []*yaml.No
 				fc.SetPendingPathSegment(child, inheritedPending+thisSegment)
 			} else {
 				fc.PushPathSegment(thisSegment)
+			}
+			if s.spectral {
+				fc.SetPropertyName(strconv.Itoa(actualIndex))
 			}
 		}
 		return []*yaml.Node{child}
@@ -674,6 +714,9 @@ func bounds(start, end *int64, step, length int64) (int64, int64) {
 }
 
 func (s filterSelector) Matches(idx index, node *yaml.Node, root *yaml.Node) bool {
+	if s.spectralExpression != nil {
+		return s.spectralExpression.Matches(idx, node, root)
+	}
 	return s.expression.Matches(idx, node, root)
 }
 

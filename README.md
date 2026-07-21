@@ -280,6 +280,117 @@ $.person.*~
 
 ---
 
+## Spectral Compatibility
+
+Spectral rulesets use a safe JavaScript-flavored JSONPath subset that is not
+part of RFC 9535. Enable it explicitly when executing Spectral `given`
+selectors:
+
+```go
+import (
+    "github.com/pb33f/jsonpath/pkg/jsonpath"
+    "github.com/pb33f/jsonpath/pkg/jsonpath/config"
+)
+
+path, err := jsonpath.NewPath(
+    `$.paths[?(@property && !@property.match(/\/openapi\.json/))]~`,
+    config.WithSpectralCompatibility(),
+)
+```
+
+`WithSpectralCompatibility()` implies the property-name extension and all
+JSONPath Plus features, including context variables, `~`, and `^`.
+`WithPropertyNameExtension()` may still be supplied and is redundant but
+valid. `WithLazyContextTracking()` is independent and produces the same
+results in eager and lazy modes.
+
+Spectral compatibility and `WithStrictRFC9535()` are mutually exclusive.
+Supplying both returns a configuration error regardless of option order. The
+default dialect remains unchanged.
+
+### Compatibility matrix
+
+| Status | Feature | Behavior |
+|--------|---------|----------|
+| Supported | Truthiness | Missing values, `null`, `false`, zero, and empty strings are false; arrays, objects, non-empty strings, and non-zero numbers are true |
+| Supported | Regex literals | `/pattern/flags`, compiled once with Go's linear-time RE2 engine |
+| Supported | `value.match(regex)` | Partial regex search on strings; usable only as a truthy test |
+| Supported | `value.indexOf(string[, fromIndex])` | JavaScript UTF-16 code-unit indexing on strings |
+| Supported | `value.includes(value[, fromIndex])` | Safe membership checks on strings and sequences |
+| Supported | `value.length` | UTF-16 length for strings and element count for sequences |
+| Supported | `value.constructor.name` | Read-only synthetic type metadata: `Array`, `Object`, `String`, `Number`, or `Boolean` |
+| Supported | `void 0` | The missing/undefined value used by official Spectral selectors |
+| Supported | `===` and `!==` | JavaScript strict equality, including reference identity for arrays and objects |
+| Supported | `==` and `!=` | JavaScript scalar coercion and reference identity for arrays and objects |
+| Partial by design | `value.match(regex)` result | Truthiness is exact; comparison and result chaining are rejected because the evaluator does not expose JavaScript match arrays |
+| Partial by design | Regex `u` flag | Accepted for RE2-compatible patterns; JavaScript-only code-point escapes are rejected |
+| Unsupported | Arbitrary JavaScript and methods | Assignments, statements, functions, unknown methods, constructors, prototype access, and reflection are rejected |
+| Unsupported | JavaScript-only regex features | Lookaround, backreferences, `d`, `v`, and `y` flags are rejected |
+
+RFC functions remain available in Spectral mode. For example,
+`match(@.name, 'a.*')` is RFC 9535 full-string matching, whereas
+`@.name.match(/a/)` is a Spectral partial search. Spectral `match` returns an
+internal boolean-compatible result; comparing it, reading its length, or
+chaining from it is rejected rather than approximated.
+
+### Context value types
+
+Spectral mode follows JavaScript object and array property behavior:
+
+- `@property` and `@parentProperty` are strings for mapping entries. YAML keys
+  are stringified, so an unquoted response key such as `404` works with
+  `@property.match(/^(4|5)/)`.
+- They are numbers for sequence-index comparisons. `@property === 3` can match
+  the fourth element, while `@property === '3'` cannot. Nimma nevertheless
+  stringifies a sequence property for its whitelisted `match`, `indexOf`, and
+  `includes` operations; this engine-specific behavior is pinned in the
+  differential corpus.
+- A method or synthetic property used on the wrong value type evaluates as a
+  non-match and never panics.
+
+### Regex dialect and safety
+
+Regex flags `i`, `m`, and `s` map to RE2 modes. `g` is accepted because it does
+not change boolean match results. `u` is accepted only when the pattern does
+not require JavaScript-only Unicode syntax such as `\u{...}`. Flags `d`, `v`,
+and `y`, duplicate or unknown flags, lookaround, and backreferences are
+rejected during compilation with line and column information.
+
+Spectral mode does not execute JavaScript and does not use reflection. It
+rejects arbitrary methods, assignments, statements, constructors,
+`__proto__`, prototype traversal, computed constructor access, getters, and
+setters before document traversal. Only the operations listed above are
+available.
+
+### Compatibility baseline
+
+The checked corpus in
+[`pkg/jsonpath/testdata/spectral`](pkg/jsonpath/testdata/spectral) records the
+pinned Spectral version, source selector, exact normalized result paths,
+multiplicity, and whether Spectral selected Nimma or its JSONPath Plus
+fallback. It includes every selector collected from the pinned official
+OpenAPI and AsyncAPI rulesets plus focused migration, public-ruleset, Unicode,
+security, and Vacuum issue fixtures. A separate public inventory classifies 51
+deduplicated selectors from four pinned rulesets. Public Spectral aliases are
+expanded before classification, and every source records its repository,
+commit, path, and license identifier.
+
+Regenerate the differential results and official-selector inventory with:
+
+```bash
+cd pkg/jsonpath/testdata/spectral/generate
+npm ci
+npm run collect-official
+npm run collect-public
+npm run generate
+```
+
+The currently supported boundary is documented above. Arbitrary JavaScript,
+user-provided functions, prototype access, and unsupported regex constructs
+are intentionally unsupported.
+
+---
+
 ## Overlay Support
 
 This library includes support for YAML overlays, which allow you to apply structured modifications to YAML documents using JSONPath expressions.

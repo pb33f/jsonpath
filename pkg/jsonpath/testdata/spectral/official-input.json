@@ -1,0 +1,108 @@
+{
+  "openapi": "3.1.0",
+  "asyncapi": "3.0.0",
+  "info": {
+    "contact": { "name": "API Team" },
+    "tags": [{ "name": "core", "description": "Core operations" }]
+  },
+  "tags": [{ "name": "core", "description": "Core operations" }],
+  "security": [{ "oauth": [] }],
+  "paths": {
+    "/pets": {
+      "parameters": [{ "in": "path", "name": "id", "schema": { "type": "string", "example": "one" } }],
+      "get": {
+        "parameters": [{ "in": "query", "name": "limit", "examples": { "small": { "value": 1 } } }],
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "application/json": {
+                "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Pet" } },
+                "examples": { "ok": { "value": [{ "name": "cat" }] } }
+              }
+            },
+            "headers": { "rate": { "examples": { "default": { "value": 1 } } } }
+          }
+        },
+        "servers": [{ "url": "https://api.example.test" }],
+        "tags": [{ "name": "core" }],
+        "traits": [{ "tags": [{ "name": "trait" }] }]
+      }
+    }
+  },
+  "responses": { "Shared": { "description": "shared" } },
+  "definitions": {
+    "Legacy": { "type": "string", "enum": ["a", "b"], "example": "a" }
+  },
+  "components": {
+    "schemas": {
+      "Pet": {
+        "type": ["object"],
+        "properties": { "name": { "type": "string", "default": "cat" } },
+        "example": { "name": "cat" }
+      }
+    },
+    "examples": { "Pet": { "value": { "name": "cat" } } },
+    "headers": { "rate": { "examples": { "one": { "value": 1 } } } },
+    "links": { "next": { "operationId": "listPets" } },
+    "parameters": {
+      "limit": { "in": "query", "schema": { "default": 10, "examples": [10] }, "examples": { "ten": { "value": 10 } } }
+    },
+    "responses": { "Missing": { "description": "missing" } },
+    "servers": { "production": { "$ref": "#/servers/production", "tags": [{ "name": "prod" }] } },
+    "messages": {
+      "Pet": {
+        "payload": { "type": "object", "default": {}, "examples": [{}] },
+        "headers": { "type": "object" },
+        "tags": [{ "name": "message" }],
+        "traits": [{ "tags": [{ "name": "message-trait" }] }]
+      }
+    },
+    "messageTraits": {
+      "common": { "payload": { "default": {}, "examples": [{}] }, "headers": {}, "tags": [{ "name": "common" }] }
+    },
+    "channels": {
+      "pets": {
+        "publish": { "message": { "tags": [{ "name": "publish" }], "traits": [] }, "tags": [] },
+        "messages": { "Pet": { "traits": [{ "tags": [] }] } }
+      }
+    },
+    "operations": { "publishPet": { "tags": [{ "name": "publish" }] } },
+    "operationTraits": { "common": { "tags": [{ "name": "common" }] } }
+  },
+  "channels": {
+    "pets": {
+      "parameters": { "id": { "schema": { "default": "one", "examples": ["one"] } } },
+      "publish": {
+        "message": {
+          "payload": { "default": {}, "examples": [{}] },
+          "headers": {},
+          "tags": [{ "name": "publish" }],
+          "traits": [{ "tags": [{ "name": "trait" }] }],
+          "oneOf": [{ "tags": [{ "name": "variant" }], "traits": [{ "tags": [] }] }]
+        },
+        "security": [{ "oauth": [] }],
+        "tags": [{ "name": "publish" }],
+        "traits": [{ "tags": [] }]
+      },
+      "messages": { "Pet": { "payload": {}, "headers": {}, "tags": [], "traits": [{ "tags": [] }] } }
+    }
+  },
+  "operations": {
+    "publishPet": { "security": [{ "oauth": [] }], "tags": [{ "name": "publish" }], "traits": [{ "tags": [] }] }
+  },
+  "servers": {
+    "production": {
+      "$ref": "#/servers/production",
+      "host": "api.example.test",
+      "pathname": "/v1",
+      "url": "https://api.example.test/v1",
+      "security": [{ "oauth": [] }],
+      "tags": [{ "name": "prod" }]
+    }
+  },
+  "webhooks": {
+    "petCreated": { "post": { "callbacks": {}, "servers": [] } },
+    "servers": []
+  }
+}

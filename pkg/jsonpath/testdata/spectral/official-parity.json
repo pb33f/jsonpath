@@ -1,0 +1,1274 @@
+{
+  "baseline": {
+    "spectralCommit": "f08df7bb4c62015391cc2b0d51cdaecf30ac109c",
+    "spectralCoreVersion": "1.23.1",
+    "nimmaVersion": "0.2.3",
+    "jsonPathPlusVersion": "10.3.0",
+    "unsafe": false,
+    "generatedBy": "npm ci && npm run collect-official && npm run generate",
+    "sourceRepository": "https://github.com/stoplightio/spectral",
+    "sourceLicense": "Apache-2.0"
+  },
+  "input": {
+    "openapi": "3.1.0",
+    "asyncapi": "3.0.0",
+    "info": {
+      "contact": {
+        "name": "API Team"
+      },
+      "tags": [
+        {
+          "name": "core",
+          "description": "Core operations"
+        }
+      ]
+    },
+    "tags": [
+      {
+        "name": "core",
+        "description": "Core operations"
+      }
+    ],
+    "security": [
+      {
+        "oauth": []
+      }
+    ],
+    "paths": {
+      "/pets": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string",
+              "example": "one"
+            }
+          }
+        ],
+        "get": {
+          "parameters": [
+            {
+              "in": "query",
+              "name": "limit",
+              "examples": {
+                "small": {
+                  "value": 1
+                }
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "ok",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/Pet"
+                    }
+                  },
+                  "examples": {
+                    "ok": {
+                      "value": [
+                        {
+                          "name": "cat"
+                        }
+                      ]
+                    }
+                  }
+                }
+              },
+              "headers": {
+                "rate": {
+                  "examples": {
+                    "default": {
+                      "value": 1
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "servers": [
+            {
+              "url": "https://api.example.test"
+            }
+          ],
+          "tags": [
+            {
+              "name": "core"
+            }
+          ],
+          "traits": [
+            {
+              "tags": [
+                {
+                  "name": "trait"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "responses": {
+      "Shared": {
+        "description": "shared"
+      }
+    },
+    "definitions": {
+      "Legacy": {
+        "type": "string",
+        "enum": [
+          "a",
+          "b"
+        ],
+        "example": "a"
+      }
+    },
+    "components": {
+      "schemas": {
+        "Pet": {
+          "type": [
+            "object"
+          ],
+          "properties": {
+            "name": {
+              "type": "string",
+              "default": "cat"
+            }
+          },
+          "example": {
+            "name": "cat"
+          }
+        }
+      },
+      "examples": {
+        "Pet": {
+          "value": {
+            "name": "cat"
+          }
+        }
+      },
+      "headers": {
+        "rate": {
+          "examples": {
+            "one": {
+              "value": 1
+            }
+          }
+        }
+      },
+      "links": {
+        "next": {
+          "operationId": "listPets"
+        }
+      },
+      "parameters": {
+        "limit": {
+          "in": "query",
+          "schema": {
+            "default": 10,
+            "examples": [
+              10
+            ]
+          },
+          "examples": {
+            "ten": {
+              "value": 10
+            }
+          }
+        }
+      },
+      "responses": {
+        "Missing": {
+          "description": "missing"
+        }
+      },
+      "servers": {
+        "production": {
+          "$ref": "#/servers/production",
+          "tags": [
+            {
+              "name": "prod"
+            }
+          ]
+        }
+      },
+      "messages": {
+        "Pet": {
+          "payload": {
+            "type": "object",
+            "default": {},
+            "examples": [
+              {}
+            ]
+          },
+          "headers": {
+            "type": "object"
+          },
+          "tags": [
+            {
+              "name": "message"
+            }
+          ],
+          "traits": [
+            {
+              "tags": [
+                {
+                  "name": "message-trait"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "messageTraits": {
+        "common": {
+          "payload": {
+            "default": {},
+            "examples": [
+              {}
+            ]
+          },
+          "headers": {},
+          "tags": [
+            {
+              "name": "common"
+            }
+          ]
+        }
+      },
+      "channels": {
+        "pets": {
+          "publish": {
+            "message": {
+              "tags": [
+                {
+                  "name": "publish"
+                }
+              ],
+              "traits": []
+            },
+            "tags": []
+          },
+          "messages": {
+            "Pet": {
+              "traits": [
+                {
+                  "tags": []
+                }
+              ]
+            }
+          }
+        }
+      },
+      "operations": {
+        "publishPet": {
+          "tags": [
+            {
+              "name": "publish"
+            }
+          ]
+        }
+      },
+      "operationTraits": {
+        "common": {
+          "tags": [
+            {
+              "name": "common"
+            }
+          ]
+        }
+      }
+    },
+    "channels": {
+      "pets": {
+        "parameters": {
+          "id": {
+            "schema": {
+              "default": "one",
+              "examples": [
+                "one"
+              ]
+            }
+          }
+        },
+        "publish": {
+          "message": {
+            "payload": {
+              "default": {},
+              "examples": [
+                {}
+              ]
+            },
+            "headers": {},
+            "tags": [
+              {
+                "name": "publish"
+              }
+            ],
+            "traits": [
+              {
+                "tags": [
+                  {
+                    "name": "trait"
+                  }
+                ]
+              }
+            ],
+            "oneOf": [
+              {
+                "tags": [
+                  {
+                    "name": "variant"
+                  }
+                ],
+                "traits": [
+                  {
+                    "tags": []
+                  }
+                ]
+              }
+            ]
+          },
+          "security": [
+            {
+              "oauth": []
+            }
+          ],
+          "tags": [
+            {
+              "name": "publish"
+            }
+          ],
+          "traits": [
+            {
+              "tags": []
+            }
+          ]
+        },
+        "messages": {
+          "Pet": {
+            "payload": {},
+            "headers": {},
+            "tags": [],
+            "traits": [
+              {
+                "tags": []
+              }
+            ]
+          }
+        }
+      }
+    },
+    "operations": {
+      "publishPet": {
+        "security": [
+          {
+            "oauth": []
+          }
+        ],
+        "tags": [
+          {
+            "name": "publish"
+          }
+        ],
+        "traits": [
+          {
+            "tags": []
+          }
+        ]
+      }
+    },
+    "servers": {
+      "production": {
+        "$ref": "#/servers/production",
+        "host": "api.example.test",
+        "pathname": "/v1",
+        "url": "https://api.example.test/v1",
+        "security": [
+          {
+            "oauth": []
+          }
+        ],
+        "tags": [
+          {
+            "name": "prod"
+          }
+        ]
+      }
+    },
+    "webhooks": {
+      "petCreated": {
+        "post": {
+          "callbacks": {},
+          "servers": []
+        }
+      },
+      "servers": []
+    }
+  },
+  "cases": [
+    {
+      "expression": "$",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$"
+      ]
+    },
+    {
+      "expression": "$..[?(@ && @.enum && @.type)]",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['definitions']['Legacy']"
+      ]
+    },
+    {
+      "expression": "$..[?(@ && @.type && @.type.constructor.name === \"Array\" && @.type.includes(\"array\"))]",
+      "engine": "nimma",
+      "expectedPaths": []
+    },
+    {
+      "expression": "$..[?(@ && @.type==\"array\")]",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['paths']['/pets']['get']['responses']['200']['content']['application/json']['schema']"
+      ]
+    },
+    {
+      "expression": "$..[?(@property !== 'properties' && @.enum && @.enum.constructor.name === 'Array')]",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['definitions']['Legacy']"
+      ]
+    },
+    {
+      "expression": "$..[?(@property === '$ref')]",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['components']['servers']['production']['$ref']",
+        "$['paths']['/pets']['get']['responses']['200']['content']['application/json']['schema']['items']['$ref']",
+        "$['servers']['production']['$ref']"
+      ]
+    },
+    {
+      "expression": "$..[description,title]",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['components']['responses']['Missing']['description']",
+        "$['info']['tags'][0]['description']",
+        "$['paths']['/pets']['get']['responses']['200']['description']",
+        "$['responses']['Shared']['description']",
+        "$['tags'][0]['description']"
+      ]
+    },
+    {
+      "expression": "$..anyOf",
+      "engine": "nimma",
+      "expectedPaths": []
+    },
+    {
+      "expression": "$..content..[?(@ && @.schema && (@.example !== void 0 || @.examples))]",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['paths']['/pets']['get']['responses']['200']['content']['application/json']"
+      ]
+    },
+    {
+      "expression": "$..content..[?(@property !== 'properties' && @ && (@ && @.example !== void 0 || @.default !== void 0) && (@.enum || @.type || @.format || @.$ref || @.properties || @.items))]",
+      "engine": "nimma",
+      "expectedPaths": []
+    },
+    {
+      "expression": "$..definitions..[?(@property !== 'properties' && @ && (@.example !== void 0 || @['x-example'] !== void 0 || @.default !== void 0) && (@.enum || @.type || @.format || @.$ref || @.properties || @.items))]",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['definitions']['Legacy']"
+      ]
+    },
+    {
+      "expression": "$..headers..[?(@ && @.schema && (@.example !== void 0 || @.examples))]",
+      "engine": "nimma",
+      "expectedPaths": []
+    },
+    {
+      "expression": "$..headers..[?(@property !== 'properties' && @ && (@ && @.example !== void 0 || @.default !== void 0) && (@.enum || @.type || @.format || @.$ref || @.properties || @.items))]",
+      "engine": "nimma",
+      "expectedPaths": []
+    },
+    {
+      "expression": "$..oneOf",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['channels']['pets']['publish']['message']['oneOf']"
+      ]
+    },
+    {
+      "expression": "$..parameters..[?(@ && @.schema && (@.example !== void 0 || @.examples))]",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['components']['parameters']['limit']"
+      ]
+    },
+    {
+      "expression": "$..parameters..[?(@property !== 'properties' && @ && (@ && @.example !== void 0 || @.default !== void 0) && (@.enum || @.type || @.format || @.$ref || @.properties || @.items))]",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['paths']['/pets']['parameters'][0]['schema']"
+      ]
+    },
+    {
+      "expression": "$..parameters..[?(@property !== 'properties' && @ && (@.example !== void 0 || @['x-example'] !== void 0 || @.default !== void 0) && (@.enum || @.type || @.format || @.$ref || @.properties || @.items))]",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['paths']['/pets']['parameters'][0]['schema']"
+      ]
+    },
+    {
+      "expression": "$..parameters[?(@ && @.in)]",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['components']['parameters']['limit']",
+        "$['paths']['/pets']['get']['parameters'][0]",
+        "$['paths']['/pets']['parameters'][0]"
+      ]
+    },
+    {
+      "expression": "$..responses..[?(@ && @.schema && @.examples)]",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['paths']['/pets']['get']['responses']['200']['content']['application/json']"
+      ]
+    },
+    {
+      "expression": "$..responses..[?(@property !== 'properties' && @ && (@.example !== void 0 || @['x-example'] !== void 0 || @.default !== void 0) && (@.enum || @.type || @.format || @.$ref || @.properties || @.items))]",
+      "engine": "nimma",
+      "expectedPaths": []
+    },
+    {
+      "expression": "$.asyncapi",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['asyncapi']"
+      ]
+    },
+    {
+      "expression": "$.channels",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['channels']"
+      ]
+    },
+    {
+      "expression": "$.channels.*",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['channels']['pets']"
+      ]
+    },
+    {
+      "expression": "$.channels.*..messages.*.traits.*.tags",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['channels']['pets']['messages']['Pet']['traits'][0]['tags']"
+      ]
+    },
+    {
+      "expression": "$.channels.*.[publish,subscribe].message",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['channels']['pets']['publish']['message']"
+      ]
+    },
+    {
+      "expression": "$.channels.*.[publish,subscribe].message.headers",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['channels']['pets']['publish']['message']['headers']"
+      ]
+    },
+    {
+      "expression": "$.channels.*.[publish,subscribe].message.oneOf.*",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['channels']['pets']['publish']['message']['oneOf'][0]"
+      ]
+    },
+    {
+      "expression": "$.channels.*.[publish,subscribe].message.oneOf.*.tags",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['channels']['pets']['publish']['message']['oneOf'][0]['tags']"
+      ]
+    },
+    {
+      "expression": "$.channels.*.[publish,subscribe].message.oneOf.*.traits.*",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['channels']['pets']['publish']['message']['oneOf'][0]['traits'][0]"
+      ]
+    },
+    {
+      "expression": "$.channels.*.[publish,subscribe].message.oneOf.*.traits.*.tags",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['channels']['pets']['publish']['message']['oneOf'][0]['traits'][0]['tags']"
+      ]
+    },
+    {
+      "expression": "$.channels.*.[publish,subscribe].message.tags",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['channels']['pets']['publish']['message']['tags']"
+      ]
+    },
+    {
+      "expression": "$.channels.*.[publish,subscribe].message.traits.*",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['channels']['pets']['publish']['message']['traits'][0]"
+      ]
+    },
+    {
+      "expression": "$.channels.*.[publish,subscribe].message.traits.*.tags",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['channels']['pets']['publish']['message']['traits'][0]['tags']"
+      ]
+    },
+    {
+      "expression": "$.channels.*.[publish,subscribe].message.traits[*].headers",
+      "engine": "nimma",
+      "expectedPaths": []
+    },
+    {
+      "expression": "$.channels.*.[publish,subscribe].tags",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['channels']['pets']['publish']['tags']"
+      ]
+    },
+    {
+      "expression": "$.channels.*.[publish,subscribe].traits.*.tags",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['channels']['pets']['publish']['traits'][0]['tags']"
+      ]
+    },
+    {
+      "expression": "$.channels.*.messages.*.headers",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['channels']['pets']['messages']['Pet']['headers']"
+      ]
+    },
+    {
+      "expression": "$.channels.*.messages.*.payload",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['channels']['pets']['messages']['Pet']['payload']"
+      ]
+    },
+    {
+      "expression": "$.channels.*.messages.*.tags",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['channels']['pets']['messages']['Pet']['tags']"
+      ]
+    },
+    {
+      "expression": "$.channels.*.messages.*.traits[*].headers",
+      "engine": "nimma",
+      "expectedPaths": []
+    },
+    {
+      "expression": "$.channels.*.parameters.*",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['channels']['pets']['parameters']['id']"
+      ]
+    },
+    {
+      "expression": "$.channels.*.parameters.*.schema.default^",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['channels']['pets']['parameters']['id']['schema']"
+      ]
+    },
+    {
+      "expression": "$.channels.*.parameters.*.schema.examples^",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['channels']['pets']['parameters']['id']['schema']"
+      ]
+    },
+    {
+      "expression": "$.channels[*][publish,subscribe]",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['channels']['pets']['publish']"
+      ]
+    },
+    {
+      "expression": "$.channels[*][publish,subscribe].message",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['channels']['pets']['publish']['message']"
+      ]
+    },
+    {
+      "expression": "$.channels[*][publish,subscribe].security.*",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['channels']['pets']['publish']['security'][0]"
+      ]
+    },
+    {
+      "expression": "$.channels[*][publish,subscribe][?(@property === 'message' && @.schemaFormat === void 0)].payload",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['channels']['pets']['publish']['message']['payload']"
+      ]
+    },
+    {
+      "expression": "$.channels[*][publish,subscribe][?(@property === 'message' && @.schemaFormat === void 0)].payload.default^",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['channels']['pets']['publish']['message']['payload']"
+      ]
+    },
+    {
+      "expression": "$.channels[*][publish,subscribe][?(@property === 'message' && @.schemaFormat === void 0)].payload.examples^",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['channels']['pets']['publish']['message']['payload']"
+      ]
+    },
+    {
+      "expression": "$.components.channels.*",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['components']['channels']['pets']"
+      ]
+    },
+    {
+      "expression": "$.components.channels.*.[publish,subscribe].message",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['components']['channels']['pets']['publish']['message']"
+      ]
+    },
+    {
+      "expression": "$.components.channels.*.[publish,subscribe].message.oneOf.*",
+      "engine": "nimma",
+      "expectedPaths": []
+    },
+    {
+      "expression": "$.components.channels.*.[publish,subscribe].message.oneOf.*.tags",
+      "engine": "nimma",
+      "expectedPaths": []
+    },
+    {
+      "expression": "$.components.channels.*.[publish,subscribe].message.oneOf.*.traits.*",
+      "engine": "nimma",
+      "expectedPaths": []
+    },
+    {
+      "expression": "$.components.channels.*.[publish,subscribe].message.oneOf.*.traits.*.tags",
+      "engine": "nimma",
+      "expectedPaths": []
+    },
+    {
+      "expression": "$.components.channels.*.[publish,subscribe].message.tags",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['components']['channels']['pets']['publish']['message']['tags']"
+      ]
+    },
+    {
+      "expression": "$.components.channels.*.[publish,subscribe].message.traits.*",
+      "engine": "nimma",
+      "expectedPaths": []
+    },
+    {
+      "expression": "$.components.channels.*.[publish,subscribe].message.traits.*.tags",
+      "engine": "nimma",
+      "expectedPaths": []
+    },
+    {
+      "expression": "$.components.channels.*.[publish,subscribe].tags",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['components']['channels']['pets']['publish']['tags']"
+      ]
+    },
+    {
+      "expression": "$.components.channels.*.[publish,subscribe].traits.*.tags",
+      "engine": "nimma",
+      "expectedPaths": []
+    },
+    {
+      "expression": "$.components.channels.*.messages.*.traits.*.tags",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['components']['channels']['pets']['messages']['Pet']['traits'][0]['tags']"
+      ]
+    },
+    {
+      "expression": "$.components.channels.*.messages.tags",
+      "engine": "nimma",
+      "expectedPaths": []
+    },
+    {
+      "expression": "$.components.examples[*]",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['components']['examples']['Pet']"
+      ]
+    },
+    {
+      "expression": "$.components.headers[*].examples[*]",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['components']['headers']['rate']['examples']['one']"
+      ]
+    },
+    {
+      "expression": "$.components.links[*]",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['components']['links']['next']"
+      ]
+    },
+    {
+      "expression": "$.components.messageTraits.*",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['components']['messageTraits']['common']"
+      ]
+    },
+    {
+      "expression": "$.components.messageTraits.*.headers",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['components']['messageTraits']['common']['headers']"
+      ]
+    },
+    {
+      "expression": "$.components.messageTraits.*.tags",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['components']['messageTraits']['common']['tags']"
+      ]
+    },
+    {
+      "expression": "$.components.messageTraits[?(@.schemaFormat === void 0)].payload",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['components']['messageTraits']['common']['payload']"
+      ]
+    },
+    {
+      "expression": "$.components.messageTraits[?(@.schemaFormat === void 0)].payload.default^",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['components']['messageTraits']['common']['payload']"
+      ]
+    },
+    {
+      "expression": "$.components.messageTraits[?(@.schemaFormat === void 0)].payload.examples^",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['components']['messageTraits']['common']['payload']"
+      ]
+    },
+    {
+      "expression": "$.components.messages.*",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['components']['messages']['Pet']"
+      ]
+    },
+    {
+      "expression": "$.components.messages.*.headers",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['components']['messages']['Pet']['headers']"
+      ]
+    },
+    {
+      "expression": "$.components.messages.*.payload",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['components']['messages']['Pet']['payload']"
+      ]
+    },
+    {
+      "expression": "$.components.messages.*.tags",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['components']['messages']['Pet']['tags']"
+      ]
+    },
+    {
+      "expression": "$.components.messages.*.traits.*",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['components']['messages']['Pet']['traits'][0]"
+      ]
+    },
+    {
+      "expression": "$.components.messages.*.traits.*.tags",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['components']['messages']['Pet']['traits'][0]['tags']"
+      ]
+    },
+    {
+      "expression": "$.components.messages[?(@.schemaFormat === void 0)].payload",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['components']['messages']['Pet']['payload']"
+      ]
+    },
+    {
+      "expression": "$.components.messages[?(@.schemaFormat === void 0)].payload.default^",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['components']['messages']['Pet']['payload']"
+      ]
+    },
+    {
+      "expression": "$.components.messages[?(@.schemaFormat === void 0)].payload.examples^",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['components']['messages']['Pet']['payload']"
+      ]
+    },
+    {
+      "expression": "$.components.operationTraits.*.tags",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['components']['operationTraits']['common']['tags']"
+      ]
+    },
+    {
+      "expression": "$.components.operations.*.tags",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['components']['operations']['publishPet']['tags']"
+      ]
+    },
+    {
+      "expression": "$.components.operations.traits.*.tags",
+      "engine": "nimma",
+      "expectedPaths": []
+    },
+    {
+      "expression": "$.components.parameters.*",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['components']['parameters']['limit']"
+      ]
+    },
+    {
+      "expression": "$.components.parameters.*.schema.default^",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['components']['parameters']['limit']['schema']"
+      ]
+    },
+    {
+      "expression": "$.components.parameters.*.schema.examples^",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['components']['parameters']['limit']['schema']"
+      ]
+    },
+    {
+      "expression": "$.components.parameters[*].examples[*]",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['components']['parameters']['limit']['examples']['ten']"
+      ]
+    },
+    {
+      "expression": "$.components.parameters[?(@ && @.in)]",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['components']['parameters']['limit']"
+      ]
+    },
+    {
+      "expression": "$.components.responses[*]",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['components']['responses']['Missing']"
+      ]
+    },
+    {
+      "expression": "$.components.schemas",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['components']['schemas']"
+      ]
+    },
+    {
+      "expression": "$.components.schemas.*.default^",
+      "engine": "nimma",
+      "expectedPaths": []
+    },
+    {
+      "expression": "$.components.schemas.*.examples^",
+      "engine": "nimma",
+      "expectedPaths": []
+    },
+    {
+      "expression": "$.components.schemas..[?(@property !== 'properties' && @ && (@ && @.example !== void 0 || @.default !== void 0) && (@.enum || @.type || @.format || @.$ref || @.properties || @.items))]",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['components']['schemas']['Pet']",
+        "$['components']['schemas']['Pet']['properties']['name']"
+      ]
+    },
+    {
+      "expression": "$.components.servers",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['components']['servers']"
+      ]
+    },
+    {
+      "expression": "$.components.servers.*",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['components']['servers']['production']"
+      ]
+    },
+    {
+      "expression": "$.components.servers.*.tags",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['components']['servers']['production']['tags']"
+      ]
+    },
+    {
+      "expression": "$.definitions",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['definitions']"
+      ]
+    },
+    {
+      "expression": "$.definitions[?(@.discriminator)]",
+      "engine": "nimma",
+      "expectedPaths": []
+    },
+    {
+      "expression": "$.info",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['info']"
+      ]
+    },
+    {
+      "expression": "$.info.contact",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['info']['contact']"
+      ]
+    },
+    {
+      "expression": "$.info.tags",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['info']['tags']"
+      ]
+    },
+    {
+      "expression": "$.info.tags[*]",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['info']['tags'][0]"
+      ]
+    },
+    {
+      "expression": "$.operations.*",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['operations']['publishPet']"
+      ]
+    },
+    {
+      "expression": "$.operations.*.security.*",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['operations']['publishPet']['security'][0]"
+      ]
+    },
+    {
+      "expression": "$.operations.*.tags",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['operations']['publishPet']['tags']"
+      ]
+    },
+    {
+      "expression": "$.operations.*.traits.*.tags",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['operations']['publishPet']['traits'][0]['tags']"
+      ]
+    },
+    {
+      "expression": "$.paths",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['paths']"
+      ]
+    },
+    {
+      "expression": "$.paths[*]",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['paths']['/pets']"
+      ]
+    },
+    {
+      "expression": "$.paths[*][*]..content[*].examples[*]",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['paths']['/pets']['get']['responses']['200']['content']['application/json']['examples']['ok']"
+      ]
+    },
+    {
+      "expression": "$.paths[*][*]..headers[*].examples[*]",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['paths']['/pets']['get']['responses']['200']['headers']['rate']['examples']['default']"
+      ]
+    },
+    {
+      "expression": "$.paths[*][*]..parameters[*].examples[*]",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['paths']['/pets']['get']['parameters'][0]['examples']['small']"
+      ]
+    },
+    {
+      "expression": "$.responses[*]",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['responses']['Shared']"
+      ]
+    },
+    {
+      "expression": "$.security[*]",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['security'][0]"
+      ]
+    },
+    {
+      "expression": "$.servers.*",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['servers']['production']"
+      ]
+    },
+    {
+      "expression": "$.servers.*.$ref",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['servers']['production']['$ref']"
+      ]
+    },
+    {
+      "expression": "$.servers.*.host",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['servers']['production']['host']"
+      ]
+    },
+    {
+      "expression": "$.servers.*.security.*",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['servers']['production']['security'][0]"
+      ]
+    },
+    {
+      "expression": "$.servers.*.tags",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['servers']['production']['tags']"
+      ]
+    },
+    {
+      "expression": "$.servers[*]",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['servers']['production']"
+      ]
+    },
+    {
+      "expression": "$.servers[*].host",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['servers']['production']['host']"
+      ]
+    },
+    {
+      "expression": "$.servers[*].pathname",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['servers']['production']['pathname']"
+      ]
+    },
+    {
+      "expression": "$.servers[*].url",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['servers']['production']['url']"
+      ]
+    },
+    {
+      "expression": "$.tags",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['tags']"
+      ]
+    },
+    {
+      "expression": "$.tags[*]",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['tags'][0]"
+      ]
+    },
+    {
+      "expression": "$.webhooks.servers",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['webhooks']['servers']"
+      ]
+    },
+    {
+      "expression": "$.webhooks[*][*].callbacks",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['webhooks']['petCreated']['post']['callbacks']"
+      ]
+    },
+    {
+      "expression": "$.webhooks[*][*].servers",
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['webhooks']['petCreated']['post']['servers']"
+      ]
+    }
+  ]
+}

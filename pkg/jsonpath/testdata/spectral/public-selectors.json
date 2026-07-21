@@ -1,0 +1,393 @@
+{
+  "generatedBy": "npm run collect-public",
+  "sources": [
+    {
+      "name": "Harbor",
+      "repository": "https://github.com/goharbor/harbor",
+      "license": "Apache-2.0",
+      "commit": "691eb2fe36f4043f040c5d18ef365511042a917b",
+      "path": ".spectral.yaml"
+    },
+    {
+      "name": "Kibana",
+      "repository": "https://github.com/elastic/kibana",
+      "license": "NOASSERTION",
+      "commit": "aa6146fd7a49bf4291921c51b35bce3a7417dc01",
+      "path": "oas_docs/linters/.spectral.yaml"
+    },
+    {
+      "name": "Postman Knowledge Base",
+      "repository": "https://github.com/postman-open-technologies/knowledge-base",
+      "license": "Apache-2.0",
+      "commit": "2dd6098ab1d63dd9dc4ea52f9c6f6dc9c64fbab2",
+      "path": "spectral/postman/http-status-codes.spectral.yaml"
+    },
+    {
+      "name": "Cimpress API Style Guide",
+      "repository": "https://github.com/Cimpress/cimpress-api-style-guide",
+      "license": "NOASSERTION",
+      "commit": "873a6aa7d37933a3c7a0f8bfd7a6018b63c5b3a7",
+      "path": "spectral/cimpress.spectral.yaml"
+    }
+  ],
+  "selectors": [
+    {
+      "expression": "$",
+      "sources": [
+        "Cimpress API Style Guide"
+      ],
+      "status": "supported"
+    },
+    {
+      "expression": "$..*.description",
+      "sources": [
+        "Kibana"
+      ],
+      "status": "supported"
+    },
+    {
+      "expression": "$..parameters..[?(@.in == 'body' \u0026\u0026 (@.example || @.schema.$ref))]",
+      "sources": [
+        "Cimpress API Style Guide"
+      ],
+      "status": "supported"
+    },
+    {
+      "expression": "$..parameters..[?(@.in == 'body')]..[?(@property !== 'properties' \u0026\u0026 @.example \u0026\u0026 ( @.type || @.format || @.$ref ))]",
+      "sources": [
+        "Cimpress API Style Guide"
+      ],
+      "status": "supported"
+    },
+    {
+      "expression": "$..properties.*~",
+      "sources": [
+        "Cimpress API Style Guide"
+      ],
+      "status": "supported"
+    },
+    {
+      "expression": "$..properties.createdAt",
+      "sources": [
+        "Cimpress API Style Guide"
+      ],
+      "status": "supported"
+    },
+    {
+      "expression": "$..properties.updatedAt",
+      "sources": [
+        "Cimpress API Style Guide"
+      ],
+      "status": "supported"
+    },
+    {
+      "expression": "$..responses",
+      "sources": [
+        "Postman Knowledge Base"
+      ],
+      "status": "supported"
+    },
+    {
+      "expression": "$..responses.*~",
+      "sources": [
+        "Postman Knowledge Base"
+      ],
+      "status": "supported"
+    },
+    {
+      "expression": "$.components.schemas.*.properties.*",
+      "sources": [
+        "Kibana"
+      ],
+      "status": "supported"
+    },
+    {
+      "expression": "$.components.schemas.*~",
+      "sources": [
+        "Cimpress API Style Guide"
+      ],
+      "status": "supported"
+    },
+    {
+      "expression": "$.components.securitySchemes[*]",
+      "sources": [
+        "Cimpress API Style Guide"
+      ],
+      "status": "supported"
+    },
+    {
+      "expression": "$.definitions",
+      "sources": [
+        "Cimpress API Style Guide"
+      ],
+      "status": "supported"
+    },
+    {
+      "expression": "$.definitions..properties[*]~",
+      "sources": [
+        "Cimpress API Style Guide"
+      ],
+      "status": "supported"
+    },
+    {
+      "expression": "$.definitions.~",
+      "sources": [
+        "Cimpress API Style Guide"
+      ],
+      "status": "supported"
+    },
+    {
+      "expression": "$.definitions[*]~",
+      "sources": [
+        "Cimpress API Style Guide"
+      ],
+      "status": "supported"
+    },
+    {
+      "expression": "$.info.description",
+      "sources": [
+        "Cimpress API Style Guide"
+      ],
+      "status": "supported"
+    },
+    {
+      "expression": "$.info.summary",
+      "sources": [
+        "Cimpress API Style Guide"
+      ],
+      "status": "supported"
+    },
+    {
+      "expression": "$.info.title",
+      "sources": [
+        "Cimpress API Style Guide"
+      ],
+      "status": "supported"
+    },
+    {
+      "expression": "$.info.version",
+      "sources": [
+        "Cimpress API Style Guide"
+      ],
+      "status": "supported"
+    },
+    {
+      "expression": "$.paths",
+      "sources": [
+        "Cimpress API Style Guide"
+      ],
+      "status": "supported"
+    },
+    {
+      "expression": "$.paths.*.*.parameters[?(@.in=='path')].name",
+      "sources": [
+        "Cimpress API Style Guide"
+      ],
+      "status": "supported"
+    },
+    {
+      "expression": "$.paths.*.*.parameters[?(@.in=='query')].name",
+      "sources": [
+        "Cimpress API Style Guide"
+      ],
+      "status": "supported"
+    },
+    {
+      "expression": "$.paths.*.*.parameters[?(@.in==='query' || @.in==='path' || @.in==='cookie')].description",
+      "sources": [
+        "Cimpress API Style Guide"
+      ],
+      "status": "supported"
+    },
+    {
+      "expression": "$.paths.*.*.parameters[?(@.in==='query' || @.in==='path' || @.in==='cookie')].name",
+      "sources": [
+        "Cimpress API Style Guide"
+      ],
+      "status": "supported"
+    },
+    {
+      "expression": "$.paths.*.*.responses",
+      "sources": [
+        "Cimpress API Style Guide"
+      ],
+      "status": "supported"
+    },
+    {
+      "expression": "$.paths.*.*.responses.*~",
+      "sources": [
+        "Cimpress API Style Guide"
+      ],
+      "status": "supported"
+    },
+    {
+      "expression": "$.paths.*.*[responses,requestBody]..content..schema",
+      "sources": [
+        "Cimpress API Style Guide"
+      ],
+      "status": "supported"
+    },
+    {
+      "expression": "$.paths.*.delete",
+      "sources": [
+        "Cimpress API Style Guide"
+      ],
+      "status": "supported"
+    },
+    {
+      "expression": "$.paths.*.get",
+      "sources": [
+        "Cimpress API Style Guide"
+      ],
+      "status": "supported"
+    },
+    {
+      "expression": "$.paths.*[?(@property === 'get' \u0026\u0026 @.responses \u0026\u0026 @.responses['409'])]",
+      "sources": [
+        "Cimpress API Style Guide"
+      ],
+      "status": "supported"
+    },
+    {
+      "expression": "$.paths.*~",
+      "sources": [
+        "Cimpress API Style Guide"
+      ],
+      "status": "supported"
+    },
+    {
+      "expression": "$.paths..responses[?( @property == 200 \u0026\u0026 @property \u003c 300 \u0026\u0026 @property != 204)].content[?(@property === \"application/hal+json\")]",
+      "sources": [
+        "Cimpress API Style Guide"
+      ],
+      "status": "supported"
+    },
+    {
+      "expression": "$.paths..responses[?( @property \u003e= 200 \u0026\u0026 @property \u003c 300 \u0026\u0026 @property != 204)]",
+      "sources": [
+        "Cimpress API Style Guide"
+      ],
+      "status": "supported"
+    },
+    {
+      "expression": "$.paths..responses[?( @property \u003e= 400 \u0026\u0026 @property \u003c 600 )]",
+      "sources": [
+        "Cimpress API Style Guide"
+      ],
+      "status": "supported"
+    },
+    {
+      "expression": "$.paths.[*].responses[?(@property.match(/^(2)/))].content.*~",
+      "sources": [
+        "Cimpress API Style Guide"
+      ],
+      "status": "supported"
+    },
+    {
+      "expression": "$.paths.[*].responses[?(@property.match(/^(4|5)/))].content.*~",
+      "sources": [
+        "Cimpress API Style Guide"
+      ],
+      "status": "supported"
+    },
+    {
+      "expression": "$.paths[*].delete.responses",
+      "sources": [
+        "Cimpress API Style Guide"
+      ],
+      "status": "supported"
+    },
+    {
+      "expression": "$.paths[*].get.responses",
+      "sources": [
+        "Cimpress API Style Guide"
+      ],
+      "status": "supported"
+    },
+    {
+      "expression": "$.paths[*].post.responses",
+      "sources": [
+        "Cimpress API Style Guide"
+      ],
+      "status": "supported"
+    },
+    {
+      "expression": "$.paths[*].put.responses",
+      "sources": [
+        "Cimpress API Style Guide"
+      ],
+      "status": "supported"
+    },
+    {
+      "expression": "$.paths[*][*]",
+      "sources": [
+        "Harbor",
+        "Kibana"
+      ],
+      "status": "supported"
+    },
+    {
+      "expression": "$.paths[*][*].description",
+      "sources": [
+        "Cimpress API Style Guide"
+      ],
+      "status": "supported"
+    },
+    {
+      "expression": "$.paths[*][*].operationId",
+      "sources": [
+        "Harbor"
+      ],
+      "status": "supported"
+    },
+    {
+      "expression": "$.paths[*][*].responses.[200].content.[application/json]",
+      "sources": [
+        "Kibana"
+      ],
+      "status": "supported"
+    },
+    {
+      "expression": "$.paths[*][*].summary",
+      "sources": [
+        "Kibana"
+      ],
+      "status": "supported"
+    },
+    {
+      "expression": "$.paths[*][get,put,post,delete,options,head,patch,trace]",
+      "sources": [
+        "Kibana"
+      ],
+      "status": "supported"
+    },
+    {
+      "expression": "$.paths[*]~",
+      "sources": [
+        "Cimpress API Style Guide"
+      ],
+      "status": "supported"
+    },
+    {
+      "expression": "$.paths[?(@property.match(/.*\\/{.*}.*/))]..responses",
+      "sources": [
+        "Cimpress API Style Guide"
+      ],
+      "status": "supported"
+    },
+    {
+      "expression": "$.servers..url",
+      "sources": [
+        "Cimpress API Style Guide"
+      ],
+      "status": "supported"
+    },
+    {
+      "expression": "$.servers[*].url",
+      "sources": [
+        "Cimpress API Style Guide"
+      ],
+      "status": "supported"
+    }
+  ]
+}

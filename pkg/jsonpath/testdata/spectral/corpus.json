@@ -1,0 +1,349 @@
+{
+  "baseline": {
+    "spectralCommit": "f08df7bb4c62015391cc2b0d51cdaecf30ac109c",
+    "spectralCoreVersion": "1.23.1",
+    "nimmaVersion": "0.2.3",
+    "jsonPathPlusVersion": "10.3.0",
+    "unsafe": false,
+    "generatedBy": "npm ci && npm run generate"
+  },
+  "cases": [
+    {
+      "name": "vacuum-issue-936",
+      "source": "https://github.com/daveshanley/vacuum/issues/936",
+      "expression": "$.paths[?(@property && !@property.match(/\\/openapi\\.json/))]~",
+      "input": {
+        "paths": {
+          "/pets": {},
+          "/openapi.json": {},
+          "/nested/openapi.json": {},
+          "/health": {}
+        }
+      },
+      "engine": "jsonpath-plus",
+      "expectedPaths": [
+        "$['paths']['/health']",
+        "$['paths']['/pets']"
+      ],
+      "extension": true
+    },
+    {
+      "name": "numeric-response-keys",
+      "source": "https://github.com/stoplightio/spectral/blob/f08df7bb4c62015391cc2b0d51cdaecf30ac109c/packages/ruleset-migrator/src/__tests__/__fixtures__/apisyouwonthate/ruleset.yaml#L126",
+      "expression": "$.paths.[*].responses[?(@property.match(/^(4|5)/))].content.*~",
+      "input": {
+        "paths": {
+          "/pets": {
+            "responses": {
+              "200": {
+                "description": "ok"
+              },
+              "404": {
+                "description": "missing",
+                "content": {
+                  "application/problem+json": {},
+                  "application/json": {}
+                }
+              },
+              "500": {
+                "description": "error",
+                "content": {
+                  "application/problem+xml": {}
+                }
+              },
+              "default": {
+                "description": "fallback"
+              }
+            }
+          }
+        }
+      },
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['paths']['/pets']['responses']['404']['content']['application/json']",
+        "$['paths']['/pets']['responses']['404']['content']['application/problem+json']",
+        "$['paths']['/pets']['responses']['500']['content']['application/problem+xml']"
+      ],
+      "extension": true
+    },
+    {
+      "name": "index-of-parent",
+      "source": "https://github.com/stoplightio/spectral/blob/f08df7bb4c62015391cc2b0d51cdaecf30ac109c/packages/ruleset-migrator/src/__tests__/__fixtures__/apisyouwonthate/ruleset.yaml#L114",
+      "expression": "$.paths.[*].requestBody.content[?(@property.indexOf('json') === -1)]^",
+      "input": {
+        "paths": {
+          "/pets": {
+            "requestBody": {
+              "content": {
+                "application/json": {},
+                "application/xml": {}
+              }
+            }
+          },
+          "/health": {
+            "requestBody": {
+              "content": {
+                "application/yaml": {}
+              }
+            }
+          }
+        }
+      },
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['paths']['/health']['requestBody']['content']",
+        "$['paths']['/pets']['requestBody']['content']"
+      ],
+      "extension": true
+    },
+    {
+      "name": "constructor-name-array",
+      "source": "Spectral OAS ruleset 1.22.6",
+      "expression": "$..[?(@property !== 'properties' && @.enum && @.enum.constructor.name === 'Array')]",
+      "input": {
+        "schemas": {
+          "array": {
+            "enum": [
+              "a",
+              "b"
+            ]
+          },
+          "scalar": {
+            "enum": "a"
+          },
+          "properties": {
+            "enum": [
+              "ignored"
+            ]
+          }
+        }
+      },
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['schemas']['array']"
+      ],
+      "extension": true
+    },
+    {
+      "name": "official-array-includes",
+      "source": "Spectral OAS ruleset 1.22.6",
+      "expression": "$..[?(@ && @.type && @.type.constructor.name === 'Array' && @.type.includes('array'))]",
+      "input": {
+        "schemas": {
+          "list": {
+            "type": [
+              "string",
+              "array"
+            ]
+          },
+          "scalar": {
+            "type": "array"
+          }
+        }
+      },
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['schemas']['list']"
+      ],
+      "extension": true
+    },
+    {
+      "name": "official-void-zero",
+      "source": "Spectral OAS ruleset 1.22.6",
+      "expression": "$..[?(@ && (@.example !== void 0 || @.default !== void 0))]",
+      "input": {
+        "schemas": {
+          "example": {
+            "example": 0
+          },
+          "default": {
+            "default": null
+          },
+          "absent": {
+            "type": "string"
+          }
+        }
+      },
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['schemas']",
+        "$['schemas']['default']",
+        "$['schemas']['example']"
+      ],
+      "extension": true
+    },
+    {
+      "name": "sequence-property-number",
+      "source": "JSONPath Plus property semantics",
+      "expression": "$.values[?(@property === 3)]",
+      "input": {
+        "values": [
+          "zero",
+          "one",
+          "two",
+          "three"
+        ]
+      },
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['values'][3]"
+      ],
+      "extension": true
+    },
+    {
+      "name": "utf16-length-and-index",
+      "source": "ECMAScript string semantics",
+      "expression": "$.values[?(@.text.length === 4 && @.text.indexOf('b') === 3)]",
+      "input": {
+        "values": [
+          {
+            "text": "a😀b"
+          },
+          {
+            "text": "abc"
+          }
+        ]
+      },
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['values'][0]"
+      ],
+      "extension": true
+    },
+    {
+      "name": "strict-structural-identity",
+      "source": "ECMAScript strict equality semantics",
+      "expression": "$.values[?(@.a === @.b)]",
+      "input": {
+        "values": [
+          {
+            "a": [
+              1,
+              2
+            ],
+            "b": [
+              1,
+              2
+            ]
+          }
+        ]
+      },
+      "engine": "nimma",
+      "expectedPaths": [],
+      "extension": true
+    },
+    {
+      "name": "regex-flags-and-class",
+      "source": "Spectral public ruleset pattern",
+      "expression": "$.values[?(@property.match(/^[a-z/]+\\d+$/i))]",
+      "input": {
+        "values": {
+          "12": true,
+          "ABC/123": true,
+          "nope": true
+        }
+      },
+      "engine": "jsonpath-plus",
+      "expectedPaths": [
+        "$['values']['ABC/123']"
+      ],
+      "extension": true
+    },
+    {
+      "name": "loose-scalar-equality",
+      "source": "ECMAScript loose equality semantics",
+      "expression": "$.values[?(@.a == @.b)]",
+      "input": {
+        "values": [
+          {
+            "a": "200",
+            "b": 200
+          },
+          {
+            "a": false,
+            "b": 0
+          },
+          {
+            "a": true,
+            "b": 1
+          },
+          {
+            "a": "abc",
+            "b": 0
+          }
+        ]
+      },
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['values'][0]",
+        "$['values'][1]",
+        "$['values'][2]"
+      ],
+      "extension": false
+    },
+    {
+      "name": "sequence-property-regex-coercion",
+      "source": "Pinned Nimma sequence property method semantics",
+      "expression": "$.values[?(!@property.match(/3/))]",
+      "input": {
+        "values": [
+          "zero",
+          "one",
+          "two",
+          "three"
+        ]
+      },
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['values'][0]",
+        "$['values'][1]",
+        "$['values'][2]"
+      ],
+      "extension": true
+    },
+    {
+      "name": "sequence-property-index-of",
+      "source": "Pinned Nimma sequence property method semantics",
+      "expression": "$.values[?(@property.indexOf('3') === -1)]",
+      "input": {
+        "values": [
+          "zero",
+          "one",
+          "two",
+          "three"
+        ]
+      },
+      "engine": "nimma",
+      "expectedPaths": [
+        "$['values'][0]",
+        "$['values'][1]",
+        "$['values'][2]"
+      ],
+      "extension": true
+    },
+    {
+      "name": "public-dot-property-name-selector",
+      "source": "https://github.com/Cimpress/cimpress-api-style-guide/blob/873a6aa7d37933a3c7a0f8bfd7a6018b63c5b3a7/spectral/cimpress.spectral.yaml#L149",
+      "expression": "$.definitions.~",
+      "input": {
+        "definitions": {
+          "PetPayload": {
+            "nested": {
+              "deep": {}
+            }
+          },
+          "User": {}
+        }
+      },
+      "engine": "jsonpath-plus",
+      "expectedPaths": [
+        "$['definitions']",
+        "$['definitions']['PetPayload']",
+        "$['definitions']['PetPayload']['nested']",
+        "$['definitions']['PetPayload']['nested']['deep']",
+        "$['definitions']['User']"
+      ],
+      "extension": true
+    }
+  ]
+}

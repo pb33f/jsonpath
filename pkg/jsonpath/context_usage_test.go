@@ -79,7 +79,7 @@ func TestContextUsageAndPropertyReferenceDetection(t *testing.T) {
 	}
 
 	// positive branches across each helper type
-	truthySelector := &selector{filter: &filterSelector{expression: &logicalOrExpr{
+	truthySelector := &selector{filter: filterSelector{expression: &logicalOrExpr{
 		expressions: []*logicalAndExpr{
 			{
 				expressions: []*basicExpr{
@@ -182,7 +182,7 @@ func TestCollectContextVarUsageCoversBranches(t *testing.T) {
 		},
 	}
 	childSelector := &selector{
-		filter: &filterSelector{expression: &logicalOrExpr{
+		filter: filterSelector{expression: &logicalOrExpr{
 			expressions: []*logicalAndExpr{{expressions: []*basicExpr{firstBasic}}},
 		}},
 	}
@@ -221,7 +221,7 @@ func TestCollectContextVarUsageCoversBranches(t *testing.T) {
 		},
 	}
 	descSelector := &selector{
-		filter: &filterSelector{expression: &logicalOrExpr{
+		filter: filterSelector{expression: &logicalOrExpr{
 			expressions: []*logicalAndExpr{{expressions: []*basicExpr{secondBasic}}},
 		}},
 	}
@@ -283,26 +283,26 @@ type bareFilterContext struct {
 	_index
 }
 
-func (b *bareFilterContext) PropertyName() string                                 { return "" }
-func (b *bareFilterContext) SetPropertyName(string)                               {}
-func (b *bareFilterContext) Parent() *yaml.Node                                   { return nil }
-func (b *bareFilterContext) SetParent(*yaml.Node)                                 {}
-func (b *bareFilterContext) ParentPropertyName() string                           { return "" }
-func (b *bareFilterContext) SetParentPropertyName(string)                         {}
-func (b *bareFilterContext) Path() string                                         { return "$" }
-func (b *bareFilterContext) PushPathSegment(string)                               {}
-func (b *bareFilterContext) PopPathSegment()                                      {}
-func (b *bareFilterContext) SetPendingPathSegment(*yaml.Node, string)             {}
-func (b *bareFilterContext) GetAndClearPendingPathSegment(*yaml.Node) string      { return "" }
-func (b *bareFilterContext) SetPendingPropertyName(*yaml.Node, string)            {}
-func (b *bareFilterContext) GetAndClearPendingPropertyName(*yaml.Node) string     { return "" }
-func (b *bareFilterContext) Root() *yaml.Node                                     { return nil }
-func (b *bareFilterContext) SetRoot(*yaml.Node)                                   {}
-func (b *bareFilterContext) Index() int                                           { return -1 }
-func (b *bareFilterContext) SetIndex(int)                                         {}
-func (b *bareFilterContext) EnableParentTracking()                                {}
-func (b *bareFilterContext) ParentTrackingEnabled() bool                          { return false }
-func (b *bareFilterContext) Clone() FilterContext                                 { return b }
+func (b *bareFilterContext) PropertyName() string                             { return "" }
+func (b *bareFilterContext) SetPropertyName(string)                           {}
+func (b *bareFilterContext) Parent() *yaml.Node                               { return nil }
+func (b *bareFilterContext) SetParent(*yaml.Node)                             {}
+func (b *bareFilterContext) ParentPropertyName() string                       { return "" }
+func (b *bareFilterContext) SetParentPropertyName(string)                     {}
+func (b *bareFilterContext) Path() string                                     { return "$" }
+func (b *bareFilterContext) PushPathSegment(string)                           {}
+func (b *bareFilterContext) PopPathSegment()                                  {}
+func (b *bareFilterContext) SetPendingPathSegment(*yaml.Node, string)         {}
+func (b *bareFilterContext) GetAndClearPendingPathSegment(*yaml.Node) string  { return "" }
+func (b *bareFilterContext) SetPendingPropertyName(*yaml.Node, string)        {}
+func (b *bareFilterContext) GetAndClearPendingPropertyName(*yaml.Node) string { return "" }
+func (b *bareFilterContext) Root() *yaml.Node                                 { return nil }
+func (b *bareFilterContext) SetRoot(*yaml.Node)                               {}
+func (b *bareFilterContext) Index() int                                       { return -1 }
+func (b *bareFilterContext) SetIndex(int)                                     {}
+func (b *bareFilterContext) EnableParentTracking()                            {}
+func (b *bareFilterContext) ParentTrackingEnabled() bool                      { return false }
+func (b *bareFilterContext) Clone() FilterContext                             { return b }
 
 func TestEnableTrackingHelpersNoOpForMissingOptionalMethods(t *testing.T) {
 	ctx := &bareFilterContext{_index: _index{
