@@ -1,0 +1,15 @@
+{
+  "name": "jsonpath-spectral-corpus-generator",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Pinned differential generator for the pb33f/jsonpath Spectral compatibility corpus",
+  "scripts": {
+    "generate": "node generate.mjs",
+    "collect-official": "node collect-official.mjs",
+    "collect-public": "go run collect_public.go"
+  },
+  "dependencies": {
+    "jsonpath-plus": "10.3.0",
+    "nimma": "0.2.3"
+  }
+}

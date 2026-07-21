@@ -96,7 +96,7 @@ func nestedJSONPathFromTestExpr(ast jsonPathAST) *jsonPathAST {
 		return nil
 	}
 	sel := seg.child.selectors[0]
-	if sel == nil || sel.filter == nil || sel.filter.expression == nil || len(sel.filter.expression.expressions) == 0 {
+	if sel == nil || sel.filter.expression == nil || len(sel.filter.expression.expressions) == 0 {
 		return nil
 	}
 	andExpr := sel.filter.expression.expressions[0]
@@ -119,7 +119,7 @@ func nestedJSONPathFromFunctionArg(ast jsonPathAST) *jsonPathAST {
 		return nil
 	}
 	sel := seg.child.selectors[0]
-	if sel == nil || sel.filter == nil || sel.filter.expression == nil || len(sel.filter.expression.expressions) == 0 {
+	if sel == nil || sel.filter.expression == nil || len(sel.filter.expression.expressions) == 0 {
 		return nil
 	}
 	andExpr := sel.filter.expression.expressions[0]

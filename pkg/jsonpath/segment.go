@@ -9,10 +9,11 @@ import (
 type segmentKind int
 
 const (
-	segmentKindChild       segmentKind = iota // .
-	segmentKindDescendant                     // ..
-	segmentKindProperyName                    // ~ (extension only)
-	segmentKindParent                         // ^ (JSONPath Plus parent selector)
+	segmentKindChild                 segmentKind = iota // .
+	segmentKindDescendant                               // ..
+	segmentKindProperyName                              // ~ (extension only)
+	segmentKindParent                                   // ^ (JSONPath Plus parent selector)
+	segmentKindRecursivePropertyName                    // .~ (Spectral/JSONPath Plus recursive property names)
 )
 
 type segment struct {
@@ -43,6 +44,8 @@ func (s segment) ToString() string {
 		return "~"
 	case segmentKindParent:
 		return "^"
+	case segmentKindRecursivePropertyName:
+		return ".~"
 	}
 	panic("unknown segment kind")
 }
@@ -90,7 +93,7 @@ func descendApply(value *yaml.Node, apply func(*yaml.Node)) {
 
 func (s segment) IsSingular() bool {
 	switch s.kind {
-	case segmentKindDescendant:
+	case segmentKindDescendant, segmentKindRecursivePropertyName:
 		return false
 	case segmentKindParent:
 		return true
@@ -148,7 +151,7 @@ func (s segment) getSegmentInfo() ([]SegmentInfo, error) {
 		return s.child.getSegmentInfo()
 	case segmentKindDescendant:
 		return nil, fmt.Errorf("recursive descent not supported for upsert")
-	case segmentKindParent, segmentKindProperyName:
+	case segmentKindParent, segmentKindProperyName, segmentKindRecursivePropertyName:
 		return nil, fmt.Errorf("parent/property selectors not supported for upsert")
 	default:
 		return nil, fmt.Errorf("unknown segment kind")
