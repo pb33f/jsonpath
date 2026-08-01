@@ -47,6 +47,7 @@ actions:
     update:
       x-drop: true
   - target: $.paths.*[?length(@.tags[?(@ == "dont-add-x-drop-false")]) > 0]
-    description: 'add x-drop: false to any operation which has the dont-add-x-drop-false tag'
+    description: 'add x-drop: false to any operation which has the dont-add-x-drop-false
+      tag'
     update:
       x-drop: false

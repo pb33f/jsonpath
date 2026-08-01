@@ -114,13 +114,15 @@ paths:
     get:
       operationId: listIngredients
       summary: Get a list of ingredients.
-      description: Get a list of ingredients, if authenticated this will include stock levels and product codes otherwise it will only include public information.
+      description: Get a list of ingredients, if authenticated this will include stock
+        levels and product codes otherwise it will only include public information.
       tags:
         - ingredients
       parameters:
         - name: ingredients
           in: query
-          description: A list of ingredients to filter by. If not provided all ingredients will be returned.
+          description: A list of ingredients to filter by. If not provided all ingredients
+            will be returned.
           required: false
           style: form
           explode: false
@@ -180,7 +182,8 @@ paths:
           "{$request.query.callback_url}":
             post:
               summary: Receive order updates.
-              description: Receive order updates from the supplier, this will be called whenever the status of an order changes.
+              description: Receive order updates from the supplier, this will be called
+                whenever the status of an order changes.
               tags:
                 - orders
               requestBody:
@@ -234,7 +237,8 @@ webhooks:
   stockUpdate:
     post:
       summary: Receive stock updates.
-      description: Receive stock updates from the bar, this will be called whenever the stock levels of a drink or ingredient changes.
+      description: Receive stock updates from the bar, this will be called whenever
+        the stock levels of a drink or ingredient changes.
       tags:
         - drinks
         - ingredients
@@ -295,7 +299,8 @@ components:
             - 1200 # $12.00
             - 1500 # $15.00
         stock:
-          description: The number of units of the drink in stock, only available when authenticated.
+          description: The number of units of the drink in stock, only available when
+            authenticated.
           type: integer
           readOnly: true
         productCode:
@@ -331,7 +336,8 @@ components:
         type:
           $ref: "#/components/schemas/IngredientType"
         stock:
-          description: The number of units of the ingredient in stock, only available when authenticated.
+          description: The number of units of the ingredient in stock, only available
+            when authenticated.
           type: integer
           examples:
             - 10
