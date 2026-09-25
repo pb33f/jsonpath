@@ -10,7 +10,7 @@ import (
     "github.com/pmezard/go-difflib/difflib"
     "github.com/pb33f/jsonpath/pkg/jsonpath"
     "github.com/stretchr/testify/require"
-    "go.yaml.in/yaml/v4"
+    "github.com/pb33f/go-yaml"
 )
 
 type FullTestSuite struct {

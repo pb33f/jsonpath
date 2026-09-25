@@ -30,7 +30,7 @@ package main
 import (
     "fmt"
     "github.com/pb33f/jsonpath/pkg/jsonpath"
-    "go.yaml.in/yaml/v4"
+    "github.com/pb33f/go-yaml"
 )
 
 func main() {
@@ -415,7 +415,7 @@ package main
 import (
     "fmt"
     "github.com/pb33f/jsonpath/pkg/overlay"
-    "go.yaml.in/yaml/v4"
+    "github.com/pb33f/go-yaml"
 )
 
 func main() {

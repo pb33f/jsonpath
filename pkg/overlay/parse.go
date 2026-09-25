@@ -2,7 +2,7 @@ package overlay
 
 import (
 	"fmt"
-	"go.yaml.in/yaml/v4"
+	"github.com/pb33f/go-yaml"
 	"io"
 	"os"
 	"path/filepath"
@@ -50,9 +50,15 @@ func Format(path string) error {
 	return os.WriteFile(filePath, []byte(formatted), 0644)
 }
 
-// Format writes the file back out as YAML.
+// Format writes the file back out as YAML, with two space indentation and no line wrapping: the
+// layout overlays have always been written in.
 func (o *Overlay) Format(w io.Writer) error {
-	enc := yaml.NewEncoder(w)
-	enc.SetIndent(2)
-	return enc.Encode(o)
+	enc, err := yaml.NewDumper(w, yaml.WithV3Defaults(), yaml.WithIndent(2), yaml.WithLineWidth(-1))
+	if err != nil {
+		return err
+	}
+	if err := enc.Dump(o); err != nil {
+		return err
+	}
+	return enc.Close()
 }

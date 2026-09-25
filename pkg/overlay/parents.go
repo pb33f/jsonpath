@@ -1,6 +1,6 @@
 package overlay
 
-import "go.yaml.in/yaml/v4"
+import "github.com/pb33f/go-yaml"
 
 type parentIndex map[*yaml.Node]*yaml.Node
 

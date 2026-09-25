@@ -5,10 +5,10 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/pb33f/go-yaml"
 	"github.com/pb33f/jsonpath/pkg/overlay"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.yaml.in/yaml/v4"
 	"os"
 	"strings"
 )
@@ -24,10 +24,11 @@ func NodeMatchesFile(
 	variadoc := func(pre ...any) []any { return append(msgAndArgs, pre...) }
 
 	var actualBuf bytes.Buffer
-	enc := yaml.NewEncoder(&actualBuf)
-	enc.SetIndent(2)
-	err := enc.Encode(actual)
+	enc, err := yaml.NewDumper(&actualBuf, yaml.WithV3Defaults(), yaml.WithIndent(2), yaml.WithLineWidth(-1))
+	require.NoError(t, err, variadoc("failed to create dumper: ")...)
+	err = enc.Dump(actual)
 	require.NoError(t, err, variadoc("failed to marshal node: ")...)
+	require.NoError(t, enc.Close(), variadoc("failed to flush node: ")...)
 
 	expectedBytes, err := os.ReadFile(expectedFile)
 	require.NoError(t, err, variadoc("failed to read expected file: ")...)

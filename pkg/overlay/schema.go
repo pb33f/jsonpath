@@ -2,7 +2,7 @@ package overlay
 
 import (
 	"bytes"
-	"go.yaml.in/yaml/v4"
+	"github.com/pb33f/go-yaml"
 )
 
 // Extensible provides a place for extensions to be added to components of the
@@ -31,9 +31,7 @@ type Overlay struct {
 
 func (o *Overlay) ToString() (string, error) {
 	buf := bytes.NewBuffer([]byte{})
-	decoder := yaml.NewEncoder(buf)
-	decoder.SetIndent(2)
-	err := decoder.Encode(o)
+	err := o.Format(buf)
 	return buf.String(), err
 }
 

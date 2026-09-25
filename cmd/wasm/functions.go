@@ -9,7 +9,7 @@ import (
     "github.com/pb33f/jsonpath/pkg/jsonpath/config"
     "github.com/pb33f/jsonpath/pkg/jsonpath/token"
     "github.com/pb33f/jsonpath/pkg/overlay"
-    "go.yaml.in/yaml/v4"
+    "github.com/pb33f/go-yaml"
     "reflect"
     "syscall/js"
 )
