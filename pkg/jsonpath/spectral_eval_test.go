@@ -3,7 +3,7 @@ package jsonpath
 import (
 	"testing"
 
-	"go.yaml.in/yaml/v4"
+	"github.com/pb33f/go-yaml"
 )
 
 func TestSpectralTruthinessAllValueKinds(t *testing.T) {

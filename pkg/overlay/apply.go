@@ -1,9 +1,9 @@
 package overlay
 
 import (
+	"github.com/pb33f/go-yaml"
 	"github.com/pb33f/jsonpath/pkg/jsonpath"
 	"github.com/pb33f/jsonpath/pkg/jsonpath/config"
-	"go.yaml.in/yaml/v4"
 )
 
 // ApplyTo will take an overlay and apply its changes to the given YAML

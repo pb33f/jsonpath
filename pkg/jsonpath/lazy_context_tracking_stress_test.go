@@ -7,9 +7,9 @@ import (
 	"os"
 	"testing"
 
+	"github.com/pb33f/go-yaml"
 	"github.com/pb33f/jsonpath/pkg/jsonpath/config"
 	"github.com/pb33f/jsonpath/pkg/jsonpath/token"
-	"go.yaml.in/yaml/v4"
 )
 
 func BenchmarkLazyContextTrackingStress(b *testing.B) {
