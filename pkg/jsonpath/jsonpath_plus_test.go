@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/pb33f/jsonpath/pkg/jsonpath/config"
-	"github.com/stretchr/testify/assert"
+	"github.com/pb33f/testify/assert"
 	"github.com/pb33f/go-yaml"
 )
 
