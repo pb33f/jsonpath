@@ -9,7 +9,7 @@ import (
 
     "github.com/pmezard/go-difflib/difflib"
     "github.com/pb33f/jsonpath/pkg/jsonpath"
-    "github.com/stretchr/testify/require"
+    "github.com/pb33f/testify/require"
     "github.com/pb33f/go-yaml"
 )
 

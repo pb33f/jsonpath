@@ -3,7 +3,7 @@ package jsonpath_test
 import (
 	"github.com/pb33f/jsonpath/pkg/jsonpath"
 	"github.com/pb33f/jsonpath/pkg/jsonpath/config"
-	"github.com/stretchr/testify/require"
+	"github.com/pb33f/testify/require"
 	"testing"
 )
 
