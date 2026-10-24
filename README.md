@@ -59,6 +59,28 @@ store:
 
 ## JSONPath Plus Extensions
 
+### Backtick member escapes
+
+A single leading backtick selects a literal member name in dot notation or an
+unquoted bracket selector. For example:
+
+~~~text
+$.schema.`$ref
+$.content.`application/json.schema
+$..`*
+$[`$ref,`*]
+~~~
+
+There is no closing backtick: a trailing backtick is part of the key. Path
+separators still delimit segments. Use quoted bracket notation for keys that
+contain separators or whitespace, and inside filters: `@['$ref']`.
+
+Quoted bracket names retain their RFC 9535 meaning, including literal backticks;
+unlike the JavaScript implementation, `$['*']` selects the key `*`, and
+`` $['`*'] `` selects the key `` `* ``. `String()` normalizes backtick escapes
+to quoted bracket notation. `config.WithStrictRFC9535()` rejects unquoted
+backtick escapes.
+
 ### Context Variables
 
 Context variables provide information about the current evaluation context within filter expressions. They are prefixed with `@` and can be used in comparisons.
